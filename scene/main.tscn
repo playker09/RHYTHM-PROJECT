@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://csx3vv2jsfckr"]
+
+[ext_resource type="Script" uid="uid://bw8nt6chsv8li" path="res://script/main.gd" id="1_itxqv"]
+[ext_resource type="Script" uid="uid://cmvdkk0ddc6j8" path="res://script/note.gd" id="2_v0l8b"]
+[ext_resource type="AudioStream" uid="uid://btm7jftqvepv0" path="res://music/JACKPOT.mp3" id="3_brvut"]
+[ext_resource type="Script" uid="uid://c57d3hvp6lfa6" path="res://script/music.gd" id="3_wp4xf"]
+
+[node name="Main" type="Node2D" unique_id=343337609]
+script = ExtResource("1_itxqv")
+
+[node name="LeftLane" type="ColorRect" parent="." unique_id=1591811715]
+offset_right = 576.0
+offset_bottom = 648.0
+color = Color(0.12156863, 0.31764707, 1, 1)
+
+[node name="RightLane" type="ColorRect" parent="." unique_id=561808090]
+offset_left = 576.0
+offset_top = 1.0
+offset_right = 1152.0
+offset_bottom = 649.0
+color = Color(1, 0.19215687, 0.19215687, 1)
+
+[node name="Note" type="Node2D" parent="." unique_id=1741869266]
+script = ExtResource("2_v0l8b")
+
+[node name="Music" type="AudioStreamPlayer2D" parent="." unique_id=874637233]
+stream = ExtResource("3_brvut")
+script = ExtResource("3_wp4xf")
+
+[node name="JudgementLine" type="ColorRect" parent="." unique_id=1592495752]
+offset_top = 600.0
+offset_right = 1152.0
+offset_bottom = 610.0
