@@ -11,14 +11,13 @@ config_version=5
 [application]
 
 config/name="RHYTHM PROJECT"
-run/main_scene="uid://csx3vv2jsfckr"
+run/main_scene="res://scene/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
-Global="*uid://16wdvaih1soh"
-Charts="*uid://t7l13ns20bc3"
+Global="*res://script/global.gd"
 
 [display]
 

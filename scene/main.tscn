@@ -1,33 +1,32 @@
-[gd_scene format=3 uid="uid://csx3vv2jsfckr"]
+[gd_scene format=3 uid="uid://bsa5c8w7ranvc"]
 
-[ext_resource type="Script" uid="uid://bw8nt6chsv8li" path="res://script/main.gd" id="1_itxqv"]
-[ext_resource type="Script" uid="uid://cmvdkk0ddc6j8" path="res://script/note.gd" id="2_v0l8b"]
-[ext_resource type="AudioStream" uid="uid://btm7jftqvepv0" path="res://music/JACKPOT.mp3" id="3_brvut"]
-[ext_resource type="Script" uid="uid://c57d3hvp6lfa6" path="res://script/music.gd" id="3_wp4xf"]
+[ext_resource type="Script" uid="uid://bw8nt6chsv8li" path="res://script/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://b8voj6wxwb0ub" path="res://script/music_player.gd" id="2_music"]
+[ext_resource type="Script" uid="uid://o4g5stptd7m5" path="res://script/metronome.gd" id="3_metronome"]
+[ext_resource type="Script" uid="uid://cgf7vyt77bq36" path="res://script/chart.gd" id="4_chart"]
+[ext_resource type="Script" uid="uid://dt61dri3b6smh" path="res://script/display.gd" id="5_display"]
+[ext_resource type="Script" uid="uid://ctw5h7nu0gp36" path="res://script/judge.gd" id="6_judge"]
+[ext_resource type="Script" uid="uid://c6qjf1t22fwey" path="res://script/player_input.gd" id="7_input"]
+[ext_resource type="AudioStream" uid="uid://btm7jftqvepv0" path="res://music/JACKPOT.mp3" id="8_song"]
 
-[node name="Main" type="Node2D" unique_id=343337609]
-script = ExtResource("1_itxqv")
+[node name="Main" type="Node2D" unique_id=387735533]
+script = ExtResource("1_main")
 
-[node name="LeftLane" type="ColorRect" parent="." unique_id=1591811715]
-offset_right = 576.0
-offset_bottom = 648.0
-color = Color(0.12156863, 0.31764707, 1, 1)
+[node name="MusicPlayer" type="AudioStreamPlayer" parent="." unique_id=1963258448]
+stream = ExtResource("8_song")
+script = ExtResource("2_music")
 
-[node name="RightLane" type="ColorRect" parent="." unique_id=561808090]
-offset_left = 576.0
-offset_top = 1.0
-offset_right = 1152.0
-offset_bottom = 649.0
-color = Color(1, 0.19215687, 0.19215687, 1)
+[node name="Metronome" type="Node" parent="." unique_id=1800643517]
+script = ExtResource("3_metronome")
 
-[node name="Note" type="Node2D" parent="." unique_id=1741869266]
-script = ExtResource("2_v0l8b")
+[node name="Chart" type="Node" parent="." unique_id=733046945]
+script = ExtResource("4_chart")
 
-[node name="Music" type="AudioStreamPlayer2D" parent="." unique_id=874637233]
-stream = ExtResource("3_brvut")
-script = ExtResource("3_wp4xf")
+[node name="Display" type="Node2D" parent="." unique_id=886593225]
+script = ExtResource("5_display")
 
-[node name="JudgementLine" type="ColorRect" parent="." unique_id=1592495752]
-offset_top = 600.0
-offset_right = 1152.0
-offset_bottom = 610.0
+[node name="Judge" type="Node" parent="." unique_id=490296144]
+script = ExtResource("6_judge")
+
+[node name="PlayerInput" type="Node" parent="." unique_id=1254671798]
+script = ExtResource("7_input")
