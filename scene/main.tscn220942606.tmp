@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://ciyg5kgdb6gq7"]
+
+[ext_resource type="Script" uid="uid://d0wjc3vq47ola" path="res://script/main_new.gd" id="1_main"]
+[ext_resource type="AudioStream" uid="uid://btm7jftqvepv0" path="res://music/JACKPOT.mp3" id="2_music"]
+
+[node name="RhythmProject" type="Node2D" unique_id=43217313]
+script = ExtResource("1_main")
+
+[node name="Music" type="AudioStreamPlayer" parent="." unique_id=711523926]
+stream = ExtResource("2_music")
