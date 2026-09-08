@@ -1,10 +1,12 @@
-class_name RhythmMusicPlayer
 extends AudioStreamPlayer
+class_name RhythmMusicPlayer
 
 signal playback_started
 signal playback_paused
 signal playback_stopped
 var _paused_position := 0.0
+var song_position : float = 0.0
+var audio_offset := 0.0
 
 func play_song(from_position := 0.0) -> void:
 	play(from_position)
@@ -32,7 +34,10 @@ func seek_song(position_seconds: float) -> void:
 	_paused_position = maxf(position_seconds, 0.0)
 
 func get_current_time() -> float:
-	return get_playback_position() if playing and not stream_paused else _paused_position
+	return get_playback_position() + AudioServer.get_time_since_last_mix()  if playing and not stream_paused else _paused_position
 
 func is_song_playing() -> bool:
 	return playing and not stream_paused
+
+func _process(_delta: float) -> void:
+	song_position = get_current_time()

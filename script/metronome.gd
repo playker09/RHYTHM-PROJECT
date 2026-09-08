@@ -1,4 +1,3 @@
-class_name Metronome
 extends Node
 
 var tempo_map: Array[Dictionary] = []

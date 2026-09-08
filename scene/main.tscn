@@ -1,32 +1,27 @@
-[gd_scene format=3 uid="uid://bsa5c8w7ranvc"]
+[gd_scene load_steps=5 format=3 uid="uid://bsa5c8w7ranvc"]
 
 [ext_resource type="Script" uid="uid://bw8nt6chsv8li" path="res://script/main.gd" id="1_main"]
 [ext_resource type="Script" uid="uid://b8voj6wxwb0ub" path="res://script/music_player.gd" id="2_music"]
-[ext_resource type="Script" uid="uid://o4g5stptd7m5" path="res://script/metronome.gd" id="3_metronome"]
-[ext_resource type="Script" uid="uid://cgf7vyt77bq36" path="res://script/chart.gd" id="4_chart"]
 [ext_resource type="Script" uid="uid://dt61dri3b6smh" path="res://script/display.gd" id="5_display"]
-[ext_resource type="Script" uid="uid://ctw5h7nu0gp36" path="res://script/judge.gd" id="6_judge"]
-[ext_resource type="Script" uid="uid://c6qjf1t22fwey" path="res://script/player_input.gd" id="7_input"]
 [ext_resource type="AudioStream" uid="uid://btm7jftqvepv0" path="res://music/JACKPOT.mp3" id="8_song"]
+[ext_resource type="Script" path="res://script/menu.gd" id="9_menu"]
 
 [node name="Main" type="Node2D" unique_id=387735533]
 script = ExtResource("1_main")
 
 [node name="MusicPlayer" type="AudioStreamPlayer" parent="." unique_id=1963258448]
 stream = ExtResource("8_song")
+volume_db = -20.0
 script = ExtResource("2_music")
-
-[node name="Metronome" type="Node" parent="." unique_id=1800643517]
-script = ExtResource("3_metronome")
-
-[node name="Chart" type="Node" parent="." unique_id=733046945]
-script = ExtResource("4_chart")
 
 [node name="Display" type="Node2D" parent="." unique_id=886593225]
 script = ExtResource("5_display")
 
-[node name="Judge" type="Node" parent="." unique_id=490296144]
-script = ExtResource("6_judge")
+[node name="current_beat" type="Label" parent="Display" unique_id=342395522]
+offset_right = 89.0
+offset_bottom = 23.0
+text = "현재 곡 위치"
 
-[node name="PlayerInput" type="Node" parent="." unique_id=1254671798]
-script = ExtResource("7_input")
+[node name="Menu" type="CanvasLayer" parent="."]
+layer = 10
+script = ExtResource("9_menu")

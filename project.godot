@@ -18,6 +18,10 @@ config/icon="res://icon.svg"
 [autoload]
 
 Global="*res://script/global.gd"
+Chart="*uid://cgf7vyt77bq36"
+Judge="*uid://ctw5h7nu0gp36"
+Metronome="*uid://o4g5stptd7m5"
+PlayerInput="*uid://c6qjf1t22fwey"
 
 [display]
 

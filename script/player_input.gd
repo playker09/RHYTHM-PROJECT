@@ -1,4 +1,3 @@
-class_name PlayerInput
 extends Node
 
 signal normal_note_pressed(lane: Global.Lane)
