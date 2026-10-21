@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RHYTHM 패턴 툴</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="group">
+      <select id="songSelect" title="곡 선택"></select>
+      <button id="btnNew" title="새 곡 만들기">＋ 새 곡</button>
+      <button id="btnSave" class="primary" title="저장 (Ctrl+S)">저장</button>
+      <button id="btnUndo" title="되돌리기 (Ctrl+Z)">↶</button>
+      <button id="btnRedo" title="다시 실행 (Ctrl+Y)">↷</button>
+    </div>
+    <div class="group tools" id="tools">
+      <button data-tool="select" title="선택/이동 (1)">선택</button>
+      <button data-tool="tap" title="탭 (2)">탭</button>
+      <button data-tool="hold" title="홀드: 드래그 (3)">홀드</button>
+      <button data-tool="flick" title="플릭 (4)">플릭</button>
+      <button data-tool="field" title="필드: 클릭으로 키프레임 추가, Enter로 확정 (5)">필드</button>
+    </div>
+    <div class="group">
+      <label>스냅
+        <select id="snapSelect"></select>
+      </label>
+      <button id="btnFlickDir" title="플릭 방향 (Tab)">→</button>
+      <label>폭 <input id="defWidth" type="number" min="0.02" max="1" step="0.01" value="0.30"></label>
+    </div>
+    <div class="group">
+      <button id="btnPlay" title="재생/정지 (Space)">▶ 재생</button>
+      <label class="chk"><input id="chkClap" type="checkbox" checked> 효과음</label>
+      <label>속도 <select id="rateSelect"><option>0.5</option><option>0.75</option><option selected>1</option></select></label>
+      <label>줌 <input id="zoom" type="range" min="80" max="900" value="320"></label>
+    </div>
+    <div class="spacer"></div>
+    <div id="clock" title="현재 위치">0.000s</div>
+  </header>
+
+  <main id="main">
+    <div id="stageWrap">
+      <canvas id="stage"></canvas>
+      <div id="toast"></div>
+    </div>
+    <aside id="side">
+      <nav id="tabs">
+        <button data-tab="props" class="on">속성</button>
+        <button data-tab="song">곡 · BPM</button>
+        <button data-tab="check">검사 <span id="issueBadge"></span></button>
+      </nav>
+      <section id="tab-props" class="tab"></section>
+      <section id="tab-song" class="tab" hidden></section>
+      <section id="tab-check" class="tab" hidden></section>
+    </aside>
+  </main>
+
+  <footer id="statusbar">
+    <span id="status">준비</span>
+    <span class="spacer"></span>
+    <span id="rootInfo"></span>
+  </footer>
+</div>
+
+<dialog id="dlgNew">
+  <form method="dialog" id="formNew">
+    <h3>새 곡 만들기</h3>
+    <label>폴더 이름 <input id="newFolder" required placeholder="my_song" pattern="[A-Za-z0-9가-힣._\- ]{1,64}"></label>
+    <label>제목 <input id="newTitle" placeholder="곡 제목"></label>
+    <label>아티스트 <input id="newArtist" placeholder="아티스트"></label>
+    <label>BPM <input id="newBpm" type="number" min="1" step="0.01" value="120"></label>
+    <label>오디오 파일 (wav/ogg/mp3) <input id="newAudio" type="file" accept=".wav,.ogg,.mp3,audio/*"></label>
+    <p class="hint">새 오디오는 Godot 에디터에서 프로젝트를 한 번 열어야 import 됩니다.</p>
+    <div class="row"><button value="cancel" type="button" id="newCancel">취소</button><button class="primary" value="ok">만들기</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgRoot">
+  <form method="dialog" id="formRoot">
+    <h3>게임 프로젝트 폴더를 찾을 수 없습니다</h3>
+    <p>RHYTHM-PROJECT (project.godot 이 있는 폴더)를 지정해 주세요.</p>
+    <div class="row"><button type="button" id="rootBrowse" class="primary">폴더 선택…</button></div>
+  </form>
+</dialog>
+
+<script>window.__TOKEN = "__TOKEN__";</script>
+<script src="/static/core.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

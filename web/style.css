@@ -1,0 +1,65 @@
+:root {
+  --bg: #14161c; --panel: #1c1f27; --panel2: #232733; --line: #2f3442; --text: #dfe3ee; --dim: #8b93a7;
+  --accent: #5b8cff; --tap: #4cc2ff; --hold: #4cffb0; --flick: #ffb454; --field: #b57bff;
+  --err: #ff5d6c; --warn: #ffc857; --info: #7fb0ff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 "Segoe UI", "Malgun Gothic", sans-serif; overflow: hidden; }
+#app { display: flex; flex-direction: column; height: 100%; }
+button, select, input { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.on, button.active { background: #2d3a63; border-color: var(--accent); }
+input[type=number] { width: 72px; }
+input[type=range] { padding: 0; width: 90px; vertical-align: middle; }
+label { color: var(--dim); display: inline-flex; gap: 4px; align-items: center; }
+label.chk { color: var(--text); }
+.spacer { flex: 1; }
+
+#topbar { display: flex; gap: 10px; align-items: center; padding: 6px 10px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+#topbar .group { display: flex; gap: 6px; align-items: center; }
+#tools button { min-width: 48px; }
+#clock { font: 600 13px Consolas, monospace; text-align: right; white-space: nowrap; }
+
+#main { flex: 1; display: flex; min-height: 0; }
+#stageWrap { flex: 1; position: relative; min-width: 0; }
+#stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #10121a; }
+#toast { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: #000c; padding: 6px 12px; border-radius: 6px; opacity: 0; transition: opacity .25s; pointer-events: none; }
+#toast.show { opacity: 1; }
+
+#side { width: 340px; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+#tabs { display: flex; }
+#tabs button { flex: 1; border-radius: 0; border: 0; border-bottom: 2px solid transparent; background: transparent; padding: 8px; }
+#tabs button.on { border-bottom-color: var(--accent); background: var(--panel2); }
+.tab { padding: 10px; overflow: auto; flex: 1; min-height: 0; }
+.tab[hidden] { display: none; }
+.tab h4 { margin: 12px 0 6px; font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
+.tab h4:first-child { margin-top: 0; }
+.form { display: grid; grid-template-columns: 84px 1fr; gap: 6px 8px; align-items: center; }
+.form input, .form select { width: 100%; }
+.dim { color: var(--dim); }
+.hint { color: var(--dim); font-size: 12px; }
+table { width: 100%; border-collapse: collapse; }
+td, th { padding: 2px 3px; text-align: left; font-weight: normal; }
+td input { width: 100%; padding: 2px 4px; }
+.row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+.stat { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
+.stat b { text-align: right; font-variant-numeric: tabular-nums; }
+
+.issue { padding: 5px 8px; margin: 3px 0; border-left: 3px solid; background: var(--panel2); border-radius: 3px; cursor: pointer; }
+.issue:hover { background: #2b3040; }
+.issue.error { border-color: var(--err); }
+.issue.warn { border-color: var(--warn); }
+.issue.info { border-color: var(--info); }
+#issueBadge { color: var(--err); font-weight: 700; }
+
+#statusbar { display: flex; gap: 10px; padding: 4px 10px; background: var(--panel); border-top: 1px solid var(--line); color: var(--dim); font-size: 12px; }
+
+dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 18px; min-width: 380px; }
+dialog::backdrop { background: #0009; }
+dialog form { display: flex; flex-direction: column; gap: 10px; }
+dialog h3 { margin: 0 0 4px; }
+dialog label { flex-direction: column; align-items: stretch; }
+dialog .row { justify-content: flex-end; }
