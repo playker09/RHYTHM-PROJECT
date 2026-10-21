@@ -934,16 +934,27 @@
 
   function addAudio() {
     if (!S.song) return;
-    const inp = h('input', { type: 'file', accept: '.wav,.ogg,.mp3,audio/*' });
+    // DOM 에 붙어 있어야 선택창이 열려 있는 동안 change 이벤트가 유실되지 않는다
+    const inp = h('input', { type: 'file', accept: '.wav,.ogg,.mp3,audio/*', style: 'display:none' });
+    document.body.append(inp);
     inp.onchange = async () => {
-      const f = inp.files[0]; if (!f) return;
-      const r = await post(`/api/audio?song=${encodeURIComponent(S.song)}&name=${encodeURIComponent(f.name)}`, f);
-      if (!r.ok) return toast(r.error || '업로드 실패', 4000);
-      if (!S.audioFiles.includes(r.name)) S.audioFiles.push(r.name);
-      mutate(() => { S.chart.meta.audio = r.name; });
-      loadAudio(S.song, r.name);
-      toast('추가됨 — Godot 에디터에서 프로젝트를 한 번 열어 import 하세요', 4000);
+      const f = inp.files[0];
+      inp.remove();
+      if (!f) return;
+      try {
+        toast('업로드 중…', 8000);
+        const r = await post(`/api/audio?song=${encodeURIComponent(S.song)}&name=${encodeURIComponent(f.name)}`, f);
+        if (!r.ok) return toast(r.error || '업로드 실패', 4000);
+        if (!S.audioFiles.includes(r.name)) S.audioFiles.push(r.name);
+        mutate(() => { S.chart.meta.audio = r.name; });
+        renderSong();
+        loadAudio(S.song, r.name);
+        toast('추가됨 — 저장하세요. Godot 에디터에서 프로젝트를 한 번 열어 import 해야 합니다', 5000);
+      } catch (err) {
+        toast('업로드 실패: ' + err, 5000);
+      }
     };
+    inp.addEventListener('cancel', () => inp.remove());
     inp.click();
   }
 
@@ -1045,7 +1056,7 @@
 
   // 자동 테스트/디버그용 훅
   window.PT = {
-    S, L, Core, hit, mutate, changed, canvas, yOf, xAir, laneCx, setTool, save, undo, redo, commitDraft, mirrorSelected, deleteSelected,
+    S, L, Core, addAudio, hit, mutate, changed, canvas, yOf, xAir, laneCx, setTool, save, undo, redo, commitDraft, mirrorSelected, deleteSelected,
     validate: () => Core.validate(S.chart, { durationMs: S.audioDur }),
   };
   const selftest = new URLSearchParams(location.search).get('selftest'); // --dev 서버에서만 파일이 제공됨

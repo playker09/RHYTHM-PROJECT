@@ -82,6 +82,20 @@
     const times = r.chart.notes.map((n) => (n.type === 'field' ? n.keys[0].time : n.time));
     ok('저장 파일 노트 시간순 + 정수 ms', times.every((t, i) => i === 0 || times[i - 1] <= t) && times.every(Number.isInteger));
 
+    // 오디오 파일 추가 (파일 선택창을 흉내: input.click 을 가로채 파일을 주입)
+    const realClick = HTMLInputElement.prototype.click;
+    HTMLInputElement.prototype.click = function () {
+      if (this.type !== 'file') return realClick.call(this);
+      const dt = new DataTransfer();
+      dt.items.add(new File([new Uint8Array(64)], 'extra.ogg', { type: 'audio/ogg' }));
+      this.files = dt.files;
+      setTimeout(() => this.dispatchEvent(new Event('change')), 0);
+    };
+    P.addAudio(); await sleep(800);
+    HTMLInputElement.prototype.click = realClick;
+    ok('오디오 추가: meta.audio 갱신 + 목록 반영', S.chart.meta.audio === 'extra.ogg' && S.audioFiles.includes('extra.ogg'), S.chart.meta.audio);
+    ok('오디오 추가: 임시 input 정리', !document.querySelector('input[type=file][style*="none"]'));
+
     // 오류가 있으면 저장 거부
     P.mutate(() => { S.chart.notes.push({ id: 9999, type: 'tap', time: 1, lane: 7 }); });
     const before = JSON.stringify((await (await fetch('/api/chart?song=sample&t=' + encodeURIComponent(window.__TOKEN))).json()).chart);
