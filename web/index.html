@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RHYTHM 패턴 툴</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="group">
+      <select id="songSelect" title="곡 선택"></select>
+      <span id="diffTabs" class="diffs" title="난이도 (곡 폴더의 ez.json / nm.json / hd.json)"></span>
+      <button id="btnNew" title="새 곡 만들기">＋ 새 곡</button>
+      <button id="btnAuto" title="노래를 분석해서 지금 난이도의 채보 초안을 만듭니다 (Ctrl+Z 로 되돌리기 가능)">✨ 자동 생성</button>
+      <button id="btnSave" class="primary" title="저장 (Ctrl+S)">저장</button>
+      <button id="btnUndo" title="되돌리기 (Ctrl+Z)">↶</button>
+      <button id="btnRedo" title="다시 실행 (Ctrl+Y)">↷</button>
+    </div>
+    <div class="group tools" id="tools">
+      <button data-tool="select" title="선택/이동 (1)">선택</button>
+      <button data-tool="tap" title="탭 (2)">탭</button>
+      <button data-tool="hold" title="홀드: 드래그 (3)">홀드</button>
+      <button data-tool="flick" title="플릭 (4)">플릭</button>
+      <button data-tool="field" title="필드: 클릭으로 키프레임 추가, Enter로 확정 (5)">필드</button>
+    </div>
+    <div class="group">
+      <label>스냅
+        <select id="snapSelect"></select>
+      </label>
+      <button id="btnFlickDir" title="플릭 방향 (Tab)">→</button>
+      <label>폭 <input id="defWidth" type="number" min="0.02" max="1" step="0.01" value="0.30"></label>
+    </div>
+    <div class="group">
+      <button id="btnPlay" title="재생/정지 (Space)">▶ 재생</button>
+      <button id="btnTest" class="primary" title="지금 위치부터 직접 쳐 보기 (T). A S D F + 마우스">🎮 테스트</button>
+      <label class="chk"><input id="chkClap" type="checkbox" checked> 효과음</label>
+      <label>속도 <select id="rateSelect"><option>0.5</option><option>0.75</option><option selected>1</option></select></label>
+      <label>줌 <input id="zoom" type="range" min="80" max="900" value="320"></label>
+    </div>
+    <div class="spacer"></div>
+    <div id="clock" title="현재 위치">0.000s</div>
+  </header>
+
+  <main id="main">
+    <div id="stageWrap">
+      <canvas id="stage"></canvas>
+      <div id="toast"></div>
+    </div>
+    <section id="testWrap" hidden>
+      <div id="testBar">
+        <label>배속 <input id="testSpeed" type="number" min="0.5" max="4" step="0.1"></label>
+        <label>감도 <input id="testSens" type="number" min="0.1" max="5" step="0.1"></label>
+        <label class="chk"><input id="testAuto" type="checkbox"> 오토</label>
+        <span class="spacer"></span>
+        <span class="dim" id="testHint" title="테스트 중에도 왼쪽에서 편집할 수 있습니다. 고친 내용은 아직 안 지나간 노트에 바로 반영됩니다">A S D F · 하이웨이 클릭 = 마우스 잡기 · R 다시 · Esc 닫기</span>
+        <button id="testClose" title="닫기 (Esc)">✕</button>
+      </div>
+      <canvas id="testView" tabindex="0"></canvas>
+    </section>
+    <aside id="side">
+      <nav id="tabs">
+        <button data-tab="props" class="on">속성</button>
+        <button data-tab="song">곡 · BPM</button>
+        <button data-tab="check">검사 <span id="issueBadge"></span></button>
+      </nav>
+      <section id="tab-props" class="tab"></section>
+      <section id="tab-song" class="tab" hidden></section>
+      <section id="tab-check" class="tab" hidden></section>
+    </aside>
+  </main>
+
+  <footer id="statusbar">
+    <span id="status">준비</span>
+    <span class="spacer"></span>
+    <span id="rootInfo"></span>
+  </footer>
+</div>
+
+<dialog id="dlgNew">
+  <form method="dialog" id="formNew">
+    <h3>새 곡 만들기</h3>
+    <label>폴더 이름 <input id="newFolder" required placeholder="my_song" pattern="[A-Za-z0-9가-힣._\- ]{1,64}"></label>
+    <label>제목 <input id="newTitle" placeholder="곡 제목"></label>
+    <label>아티스트 <input id="newArtist" placeholder="아티스트"></label>
+    <label>BPM <input id="newBpm" type="number" min="1" step="0.01" value="120"></label>
+    <label>오디오 파일 (wav/ogg/mp3) <input id="newAudio" type="file" accept=".wav,.ogg,.mp3,audio/*"></label>
+    <p class="hint">새 오디오는 Godot 에디터에서 프로젝트를 한 번 열어야 import 됩니다.</p>
+    <div class="row"><button value="cancel" type="button" id="newCancel">취소</button><button class="primary" value="ok">만들기</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgAuto">
+  <form method="dialog" id="formAuto">
+    <h3>자동 채보 생성 <span class="dim" id="autoDiff"></span></h3>
+    <p class="hint">노래의 박자·세기·음색을 분석해 초안을 찍습니다. 만든 뒤 고쳐 쓰세요. <b>Ctrl+Z</b> 로 통째로 되돌릴 수 있습니다.</p>
+    <div class="form">
+      <span>분석 결과</span><span id="autoTempo">분석 중…</span>
+      <span></span><label class="chk"><input id="autoApplyBpm" type="checkbox"> <span>추정 BPM 으로 바꾸기 <b id="autoBpmV"></b></span></label>
+      <span></span><label class="chk"><input id="autoAlign" type="checkbox"> <span>첫 박 위치 맞추기 (offset 을 <b id="autoOffV"></b> 으로) — 박자선이 노래 박에 맞음</span></label>
+      <span>범위</span>
+      <span><label class="chk"><input type="radio" name="autoRange" value="all" checked> 곡 전체 (기존 노트 지움)</label>
+        <label class="chk"><input type="radio" name="autoRange" value="here"> 지금 위치부터 끝까지</label></span>
+      <span>밀도</span><span><input id="autoDensity" type="range" min="50" max="160" value="100"> <b id="autoDensityV">100%</b></span>
+      <span>공중 노트</span><label class="chk"><input id="autoAir" type="checkbox" checked> Field / Flick 포함</label>
+      <span>레벨</span><label class="chk"><input id="autoLevel" type="checkbox" checked> 만든 결과로 레벨 추정해서 넣기</label>
+    </div>
+    <p class="hint">누를 때마다 배치가 조금씩 달라집니다. 마음에 안 들면 Ctrl+Z 후 다시 생성하세요.</p>
+    <div class="row"><button value="cancel" type="button" id="autoCancel">취소</button><button class="primary" id="autoGo" value="ok" disabled>생성</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgRoot">
+  <form method="dialog" id="formRoot">
+    <h3>게임 프로젝트 폴더를 찾을 수 없습니다</h3>
+    <p>RHYTHM-PROJECT (project.godot 이 있는 폴더)를 지정해 주세요.</p>
+    <div class="row"><button type="button" id="rootBrowse" class="primary">폴더 선택…</button></div>
+  </form>
+</dialog>
+
+<script>window.__TOKEN = "__TOKEN__";</script>
+<script src="/static/core.js"></script>
+<script src="/static/playtest.js"></script>
+<script src="/static/autochart.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
