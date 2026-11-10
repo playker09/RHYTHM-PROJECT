@@ -1,0 +1,24 @@
+# Godot 실행 파일 폴더 (약 180MB, 각자 내려받는다)
+Godot_v4.7.2-stable_win64.exe/
+
+# Godot 캐시/임포트 결과 (에디터가 다시 만든다)
+.godot/
+*.translation
+
+# 내보내기 결과물
+export_presets.cfg
+build/
+*.pck
+*.exe
+*.zip
+
+# Godot AI 플러그인 자동 업데이트 임시 폴더 (addons/godot_ai/ 는 project.godot이 참조하므로 포함)
+addons/godot_ai_update/
+
+# 에디터/도구 개인 설정
+.claude/
+.vscode/
+*.tmp
+__pycache__/
+*.pyc
+CLAUDE.md

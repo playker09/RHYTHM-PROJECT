@@ -1,0 +1,231 @@
+{
+ "meta": {
+  "title": "Metronome Test",
+  "artist": "Test Signal",
+  "audio": "song.wav",
+  "offset": 0,
+  "level": 3
+ },
+ "timing": [
+  {
+   "time": 0,
+   "bpm": 120
+  }
+ ],
+ "notes": [
+  {
+   "type": "tap",
+   "time": 2500,
+   "lane": 0
+  },
+  {
+   "type": "tap",
+   "time": 3500,
+   "lane": 1
+  },
+  {
+   "type": "tap",
+   "time": 4500,
+   "lane": 2
+  },
+  {
+   "type": "tap",
+   "time": 5500,
+   "lane": 3
+  },
+  {
+   "type": "tap",
+   "time": 6500,
+   "lane": 3
+  },
+  {
+   "type": "tap",
+   "time": 7500,
+   "lane": 2
+  },
+  {
+   "type": "tap",
+   "time": 8500,
+   "lane": 1
+  },
+  {
+   "type": "tap",
+   "time": 9500,
+   "lane": 0
+  },
+  {
+   "type": "hold",
+   "time": 10500,
+   "end": 11500,
+   "lane": 1
+  },
+  {
+   "type": "hold",
+   "time": 12500,
+   "end": 13500,
+   "lane": 2
+  },
+  {
+   "type": "hold",
+   "time": 14500,
+   "end": 15500,
+   "lane": 1
+  },
+  {
+   "type": "hold",
+   "time": 16500,
+   "end": 17500,
+   "lane": 2
+  },
+  {
+   "type": "field",
+   "keys": [
+    {
+     "time": 11000,
+     "center": 0.35,
+     "width": 0.45
+    },
+    {
+     "time": 14000,
+     "center": 0.65,
+     "width": 0.45
+    },
+    {
+     "time": 17000,
+     "center": 0.4,
+     "width": 0.45
+    }
+   ]
+  },
+  {
+   "type": "flick",
+   "time": 13000,
+   "x": 0.5,
+   "dir": "right"
+  },
+  {
+   "type": "flick",
+   "time": 16000,
+   "x": 0.5,
+   "dir": "left"
+  },
+  {
+   "type": "tap",
+   "time": 18500,
+   "lane": 0
+  },
+  {
+   "type": "tap",
+   "time": 19000,
+   "lane": 1
+  },
+  {
+   "type": "tap",
+   "time": 19500,
+   "lane": 2
+  },
+  {
+   "type": "tap",
+   "time": 20000,
+   "lane": 3
+  },
+  {
+   "type": "tap",
+   "time": 20500,
+   "lane": 2
+  },
+  {
+   "type": "tap",
+   "time": 21000,
+   "lane": 1
+  },
+  {
+   "type": "tap",
+   "time": 21500,
+   "lane": 0
+  },
+  {
+   "type": "tap",
+   "time": 22000,
+   "lane": 1
+  },
+  {
+   "type": "tap",
+   "time": 22500,
+   "lane": 2
+  },
+  {
+   "type": "tap",
+   "time": 23000,
+   "lane": 3
+  },
+  {
+   "type": "tap",
+   "time": 23500,
+   "lane": 2
+  },
+  {
+   "type": "tap",
+   "time": 24000,
+   "lane": 1
+  },
+  {
+   "type": "tap",
+   "time": 24500,
+   "lane": 0
+  },
+  {
+   "type": "tap",
+   "time": 25000,
+   "lane": 1
+  },
+  {
+   "type": "tap",
+   "time": 25500,
+   "lane": 2
+  },
+  {
+   "type": "tap",
+   "time": 26000,
+   "lane": 3
+  },
+  {
+   "type": "field",
+   "keys": [
+    {
+     "time": 19500,
+     "center": 0.5,
+     "width": 0.5
+    },
+    {
+     "time": 22500,
+     "center": 0.3,
+     "width": 0.45
+    },
+    {
+     "time": 25500,
+     "center": 0.6,
+     "width": 0.45
+    }
+   ]
+  },
+  {
+   "type": "hold",
+   "time": 26500,
+   "end": 28000,
+   "lane": 1
+  },
+  {
+   "type": "flick",
+   "time": 29000,
+   "x": 0.5,
+   "dir": "right"
+  },
+  {
+   "type": "flick",
+   "time": 30500,
+   "x": 0.5,
+   "dir": "left"
+  }
+ ]
+}
