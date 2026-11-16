@@ -26,7 +26,8 @@ class Chart:
 
     def save(self, name, level):
         chart = {
-            "meta": {"title": "Metronome Test", "artist": "Test Signal", "audio": "song.wav", "offset": 0, "level": level},
+            "meta": {"title": "Metronome Test", "artist": "Test Signal", "audio": "song.wav", "offset": 0, "level": level,
+                     "difficulty": name.split(".")[0].upper()},  # 패턴 툴이 저장할 때 넣는 값과 같게 (게임은 파일 이름으로 난이도를 정한다)
             "timing": [{"time": 0, "bpm": 120}],
             "notes": self.notes,
         }

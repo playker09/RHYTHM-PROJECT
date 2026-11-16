@@ -210,6 +210,11 @@ func _process(delta: float) -> void:
 	if _cursor != null:
 		_cursor.position.x = lerpf(_cursor.position.x, _cursor_x, 1.0 - exp(-delta * 60.0))
 
+## 연출 발광 (0~1). 왼쪽/오른쪽 옆 패널이 번쩍인다.
+func set_flash(left: float, right: float) -> void:
+	_side_mats[0].set_shader_parameter("flash", left)
+	_side_mats[1].set_shader_parameter("flash", right)
+
 func set_cursor(x: float, outside: bool) -> void:
 	if _cursor == null:
 		return

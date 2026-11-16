@@ -27,6 +27,12 @@ const DIFF_LONG: Array[String] = ["EASY", "NORMAL", "HARD"]
 
 const NOTO_PATH := "res://assets/fonts/NotoSansKR-VF.ttf"
 const DIN_PATH := "C:/Windows/Fonts/bahnschrift.ttf"
+## 게임 HUD 전용 서체 (OFL, assets/fonts 에 포함). 판정/곡 소개 = Exo 2, 콤보 = Oxanium
+const FACES := {
+	"exo": "res://assets/fonts/Exo2-VF.ttf",
+	"exo_italic": "res://assets/fonts/Exo2-Italic-VF.ttf",
+	"oxanium": "res://assets/fonts/Oxanium-VF.ttf",
+}
 
 const GLASS_SHADER := preload("res://ui/shaders/glass.gdshader")
 const GRADIENT_SHADER := preload("res://ui/shaders/text_gradient.gdshader")
@@ -61,6 +67,30 @@ static func font(display: bool, weight: int = 500, spacing: int = 0, condensed: 
 	fv.spacing_glyph = spacing
 	_cache[key] = fv
 	return fv
+
+## FACES 의 서체로 만든 폰트. 없는 글자(한글)는 Noto 로 나온다.
+static func face(name: String, weight: int = 600, spacing: int = 0) -> Font:
+	var key := "%s/%d/%d" % [name, weight, spacing]
+	if _cache.has(key):
+		return _cache[key]
+	var base: Font = load(FACES[name]) if ResourceLoader.exists(FACES[name]) else null
+	if base == null:
+		return font(true, weight, spacing)
+	var wght: int = TextServerManager.get_primary_interface().name_to_tag("wght")
+	var noto := FontVariation.new()
+	noto.base_font = _noto_file()
+	noto.variation_opentype = {wght: float(weight)}
+	var fv := FontVariation.new()
+	fv.base_font = base
+	fv.variation_opentype = {wght: float(weight)}
+	fv.fallbacks = [noto]
+	fv.spacing_glyph = spacing
+	_cache[key] = fv
+	return fv
+
+## face() 서체를 쓰는 라벨
+static func f(text: String, size: int, color: Color, name: String, weight: int = 600, spacing: int = 0) -> Label:
+	return _label(text, size, color, face(name, weight, spacing))
 
 static func _noto_file() -> Font:
 	if _noto == null:

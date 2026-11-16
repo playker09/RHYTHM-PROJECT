@@ -10,6 +10,7 @@ var offset_ms: float = 0.0
 var base_dir: String = ""
 var timing: TimingMap = TimingMap.new()
 var notes: Array[NoteData] = []   # time 오름차순
+var effects: Array[Dictionary] = []   # 연출 {type, time, duration, ...값}, time 오름차순. 판정과 무관
 
 ## 마지막 노트가 끝나는 시각
 func end_time_ms() -> float:

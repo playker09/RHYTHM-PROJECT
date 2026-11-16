@@ -6,6 +6,7 @@ render_mode unshaded, cull_disabled;
 uniform float depth = 150.0;
 uniform vec3 rim : source_color = vec3(0.56, 0.48, 1.0);
 uniform float pulse = 0.0;
+uniform float flash = 0.0;        // 연출 발광 0~1
 uniform float near_z = 8.0;
 varying vec3 wp;
 
@@ -49,6 +50,9 @@ void fragment() {
 	c += mix(rim, vec3(1.0), 0.4) * slit * (0.05 + rise * 0.6 + foot * 0.1);   // 가운데 홈
 	c += mix(rim, vec3(1.0), 0.3) * edge * (0.16 + pulse * 0.2 + rise * 0.7);  // 바깥 테두리
 	c += mix(rim, vec3(1.0), 0.5) * cap * (0.3 + pulse * 0.25);        // 머리 모서리
+
+	// 연출 발광: 테두리와 홈이 번쩍이고 면 전체가 옅게 밝아진다
+	c += mix(rim, vec3(1.0), 0.25) * flash * (edge * 1.4 + slit * 1.0 + inner * 0.5 + 0.14);
 
 	ALBEDO = c;
 	ALPHA = clamp(0.35 + edge * 0.5 + cap * 0.5 + inner * 0.1, 0.0, 1.0) * fade * shape;

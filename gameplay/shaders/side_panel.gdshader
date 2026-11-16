@@ -7,6 +7,7 @@ uniform vec3 rim : source_color = vec3(0.56, 0.48, 1.0);
 uniform float scroll = 0.0;       // 마디 기준 흐름 (m)
 uniform float spacing = 8.0;      // 쐐기 간격 (m)
 uniform float pulse = 0.0;
+uniform float flash = 0.0;        // 연출 발광 0~1
 varying vec3 wp;
 
 void vertex() {
@@ -42,6 +43,9 @@ void fragment() {
 	// 바깥 모서리
 	float outer = smoothstep(0.985, 0.992, x);
 	c += rim * outer * 0.6;
+
+	// 연출 발광: 안쪽 모서리에서 크게 번지고 골/쐐기가 밝아진다
+	c += mix(rim, vec3(1.0), 0.2) * flash * (exp(-x * 2.2) * 1.2 + rib * 0.7 + chev * 0.7 + 0.14) * out_fade;
 
 	ALBEDO = c;
 	ALPHA = clamp(mix(0.9, 0.45, smoothstep(0.0, 0.9, x)) + outer + chev * 0.3, 0.0, 1.0) * fade;

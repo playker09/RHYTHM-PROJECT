@@ -43,6 +43,7 @@ var _pillars: Array[Array] = []     # [node, x, row_offset(0/0.5)]
 var _gates: Array[MeshInstance3D] = []
 var _view_pos := Vector3(0.0, 3.7, 7.4)
 var _view_at := Vector3(0.0, 0.4, -6.0)
+var _view_fov: float = 46.0
 var _view_tween: Tween
 var _post_tween: Tween
 var _time: float = 0.0
@@ -67,13 +68,13 @@ func set_view(view: String, duration: float = 0.0) -> void:
 	if duration <= 0.0 or not is_inside_tree():
 		_view_pos = v["pos"]
 		_view_at = v["at"]
-		camera.fov = v["fov"]
+		_view_fov = v["fov"]
 		_apply_camera()
 		return
 	_view_tween = create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	_view_tween.tween_property(self, "_view_pos", v["pos"], duration)
 	_view_tween.tween_property(self, "_view_at", v["at"], duration)
-	_view_tween.tween_property(camera, "fov", v["fov"], duration)
+	_view_tween.tween_property(self, "_view_fov", v["fov"], duration)
 
 ## 화면 마무리 값. dim = 어둡게(0~1), blur = 흐림(mip 단계).
 func set_post(dim: float, blur: float, duration: float = 0.0) -> void:
@@ -88,6 +89,14 @@ func set_post(dim: float, blur: float, duration: float = 0.0) -> void:
 	_post_tween = create_tween().set_parallel()
 	_post_tween.tween_method(func(v: float): _post_mat.set_shader_parameter("dim", v), d0, dim, duration)
 	_post_tween.tween_method(func(v: float): _post_mat.set_shader_parameter("blur", v), b0, blur, duration)
+
+## 채보 연출 값. flash = 왼쪽/오른쪽 발광(0~1, 기둥 + 화면 가장자리 빛), glitch = 화면 글리치(0~1).
+## 전부 0 이면 원래 화면 그대로다.
+func set_fx(flash_left: float, flash_right: float, glitch: float) -> void:
+	for i in _pillar_mats.size():
+		_pillar_mats[i].set_shader_parameter("flash", flash_left if i % 2 == 0 else flash_right)
+	_post_mat.set_shader_parameter("glitch", glitch)
+	_post_mat.set_shader_parameter("flash", Vector2(flash_left, flash_right))
 
 ## 하늘 전체 밝기 (1 = 기본)
 func set_sky_energy(v: float) -> void:
@@ -125,6 +134,7 @@ func _apply_camera() -> void:
 	if sway > 0.0:
 		off = Vector3(sin(_time * 0.21) * sway, sin(_time * 0.33 + 1.0) * sway * 0.45, 0.0)
 	var pos: Vector3 = _view_pos + off
+	camera.fov = _view_fov
 	camera.transform = Transform3D(Basis.looking_at(_view_at - off * 0.4 - pos, Vector3.UP), pos)
 
 # --- 구성 ---

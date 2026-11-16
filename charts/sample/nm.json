@@ -4,7 +4,8 @@
   "artist": "Test Signal",
   "audio": "song.wav",
   "offset": 0,
-  "level": 8
+  "level": 8,
+  "difficulty": "NM"
  },
  "timing": [
   {
@@ -105,9 +106,40 @@
    "lane": 1
   },
   {
+   "type": "field",
+   "keys": [
+    {
+     "time": 11000,
+     "center": 0.3,
+     "width": 0.3
+    },
+    {
+     "time": 13000,
+     "center": 0.7,
+     "width": 0.25
+    },
+    {
+     "time": 15000,
+     "center": 0.5,
+     "width": 0.2
+    },
+    {
+     "time": 17000,
+     "center": 0.3,
+     "width": 0.3
+    }
+   ]
+  },
+  {
    "type": "tap",
    "time": 11500,
    "lane": 1
+  },
+  {
+   "type": "flick",
+   "time": 12000,
+   "x": 0.5,
+   "dir": "right"
   },
   {
    "type": "hold",
@@ -126,6 +158,12 @@
    "lane": 2
   },
   {
+   "type": "flick",
+   "time": 14000,
+   "x": 0.6,
+   "dir": "left"
+  },
+  {
    "type": "hold",
    "time": 14500,
    "end": 16000,
@@ -140,6 +178,12 @@
    "type": "tap",
    "time": 15500,
    "lane": 1
+  },
+  {
+   "type": "flick",
+   "time": 16000,
+   "x": 0.4,
+   "dir": "right"
   },
   {
    "type": "hold",
@@ -178,6 +222,31 @@
    "lane": 2
   },
   {
+   "type": "field",
+   "keys": [
+    {
+     "time": 19000,
+     "center": 0.5,
+     "width": 0.4
+    },
+    {
+     "time": 21000,
+     "center": 0.2,
+     "width": 0.25
+    },
+    {
+     "time": 23000,
+     "center": 0.8,
+     "width": 0.25
+    },
+    {
+     "time": 25000,
+     "center": 0.5,
+     "width": 0.3
+    }
+   ]
+  },
+  {
    "type": "tap",
    "time": 19250,
    "lane": 3
@@ -196,6 +265,12 @@
    "type": "tap",
    "time": 20000,
    "lane": 2
+  },
+  {
+   "type": "flick",
+   "time": 20000,
+   "x": 0.35,
+   "dir": "left"
   },
   {
    "type": "tap",
@@ -243,6 +318,12 @@
    "lane": 2
   },
   {
+   "type": "flick",
+   "time": 22000,
+   "x": 0.5,
+   "dir": "right"
+  },
+  {
    "type": "tap",
    "time": 22250,
    "lane": 3
@@ -286,6 +367,12 @@
    "type": "tap",
    "time": 24000,
    "lane": 2
+  },
+  {
+   "type": "flick",
+   "time": 24000,
+   "x": 0.65,
+   "dir": "left"
   },
   {
    "type": "tap",
@@ -350,54 +437,10 @@
    "lane": 2
   },
   {
-   "type": "field",
-   "keys": [
-    {
-     "time": 11000,
-     "center": 0.3,
-     "width": 0.3
-    },
-    {
-     "time": 13000,
-     "center": 0.7,
-     "width": 0.25
-    },
-    {
-     "time": 15000,
-     "center": 0.5,
-     "width": 0.2
-    },
-    {
-     "time": 17000,
-     "center": 0.3,
-     "width": 0.3
-    }
-   ]
-  },
-  {
-   "type": "field",
-   "keys": [
-    {
-     "time": 19000,
-     "center": 0.5,
-     "width": 0.4
-    },
-    {
-     "time": 21000,
-     "center": 0.2,
-     "width": 0.25
-    },
-    {
-     "time": 23000,
-     "center": 0.8,
-     "width": 0.25
-    },
-    {
-     "time": 25000,
-     "center": 0.5,
-     "width": 0.3
-    }
-   ]
+   "type": "flick",
+   "time": 29000,
+   "x": 0.5,
+   "dir": "right"
   },
   {
    "type": "field",
@@ -416,51 +459,23 @@
   },
   {
    "type": "flick",
-   "time": 12000,
-   "x": 0.5,
-   "dir": "right"
-  },
-  {
-   "type": "flick",
-   "time": 14000,
-   "x": 0.6,
-   "dir": "left"
-  },
-  {
-   "type": "flick",
-   "time": 16000,
-   "x": 0.4,
-   "dir": "right"
-  },
-  {
-   "type": "flick",
-   "time": 20000,
-   "x": 0.35,
-   "dir": "left"
-  },
-  {
-   "type": "flick",
-   "time": 22000,
-   "x": 0.5,
-   "dir": "right"
-  },
-  {
-   "type": "flick",
-   "time": 24000,
-   "x": 0.65,
-   "dir": "left"
-  },
-  {
-   "type": "flick",
-   "time": 29000,
-   "x": 0.5,
-   "dir": "right"
-  },
-  {
-   "type": "flick",
    "time": 30500,
    "x": 0.5,
    "dir": "left"
+  }
+ ],
+ "effects": [
+  {
+   "type": "zoom",
+   "time": 7250,
+   "duration": 250,
+   "amount": 0.1
+  },
+  {
+   "type": "zoom",
+   "time": 7500,
+   "duration": 250,
+   "amount": 0.1
   }
  ]
 }

@@ -196,7 +196,45 @@ static func load_chart(path: String) -> ChartData:
 		if n != null:
 			chart.notes.append(n)
 	chart.notes.sort_custom(func(a: NoteData, b: NoteData) -> bool: return a.time < b.time)
+	var fx_raw: Variant = root.get("effects", [])
+	if typeof(fx_raw) == TYPE_ARRAY:
+		chart.effects = parse_effects(fx_raw)
 	return chart
+
+## 연출 종류별 기본값 (패턴 툴 web/core.js 의 FX 와 같다)
+const FX_DEFAULTS := {
+	"flash": {"duration": 0.0, "side": "left", "strength": 1.0},
+	"glitch": {"duration": 500.0, "strength": 0.5},
+	"spin": {"duration": 2000.0, "turns": 1.0, "dir": "cw"},
+}
+
+## effects 배열 -> 정리된 연출 목록 (time 오름차순). 모르는 종류/잘못된 항목은 버리고, 빠진 값은 기본값으로 채운다.
+static func parse_effects(raw: Array) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for item in raw:
+		if typeof(item) != TYPE_DICTIONARY:
+			push_warning("잘못된 effect 항목 무시: " + str(item))
+			continue
+		var d: Dictionary = item
+		var kind: String = str(d.get("type", ""))
+		if not FX_DEFAULTS.has(kind) or not _is_num(d.get("time")):
+			push_warning("잘못된 effect 무시: " + str(d))
+			continue
+		var def: Dictionary = FX_DEFAULTS[kind]
+		var e: Dictionary = {"type": kind, "time": float(d["time"])}
+		for k: String in def:
+			var v: Variant = d.get(k)
+			if typeof(def[k]) == TYPE_STRING:
+				e[k] = str(v) if typeof(v) == TYPE_STRING else def[k]
+			else:
+				e[k] = float(v) if _is_num(v) else def[k]
+		e["duration"] = maxf(e["duration"], 0.0)
+		out.append(e)
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["time"] < b["time"])
+	return out
+
+static func _is_num(v: Variant) -> bool:
+	return typeof(v) == TYPE_FLOAT or typeof(v) == TYPE_INT
 
 static func _parse_note(d: Dictionary) -> NoteData:
 	var kind: String = str(d.get("type", ""))

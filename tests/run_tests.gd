@@ -10,6 +10,7 @@ func _init() -> void:
 	test_miss_window()
 	test_timing_map()
 	test_chart_loader()
+	test_effects()
 	test_tap_flow()
 	test_hold_flow()
 	test_score()
@@ -70,6 +71,32 @@ func test_chart_loader() -> void:
 			sorted = false
 	_check(sorted, "notes sorted by time")
 	_check(ChartLoader.load_chart("res://nope.json") == null, "missing file -> null")
+
+# --- 연출 (effects) ---
+func test_effects() -> void:
+	var fx: Array[Dictionary] = ChartLoader.parse_effects([
+		{"type": "spin", "time": 4000, "duration": 1000, "turns": 1, "dir": "ccw"},
+		{"type": "flash", "time": 1000, "side": "right"},
+		{"type": "flash", "time": 2000, "duration": 200, "side": "both", "strength": 0.5},
+		{"type": "glitch", "time": 3000},
+		{"type": "nope", "time": 0}, {"type": "flash"}, 7,
+	])
+	_check(fx.size() == 4, "bad effects dropped, got %d" % fx.size())
+	_check(fx[0]["type"] == "flash" and fx[3]["type"] == "spin", "effects sorted by time")
+	_check(is_equal_approx(fx[0]["strength"], 1.0) and is_equal_approx(fx[2]["duration"], 500.0), "effect defaults filled")
+	_check(ChartLoader.parse_effects([{"type": "zoom", "time": 0}]).is_empty(), "removed type zoom dropped")
+	var track := EffectTrack.new()
+	track.setup(fx)
+	var s: Dictionary = track.sample(999.0)
+	_check(s["flash_r"] == 0.0 and s["glitch"] == 0.0 and s["spin"] == 0.0, "nothing before first effect")
+	s = track.sample(1000.0)
+	_check(is_equal_approx(s["flash_r"], 1.0) and s["flash_l"] == 0.0, "flash right only")
+	_check(track.sample(1200.0)["flash_r"] < 1.0 and track.sample(1500.0)["flash_r"] == 0.0, "flash fades out")
+	_check(is_equal_approx(track.sample(2100.0)["flash_l"], 0.5), "flash holds for duration, both sides")
+	_check(track.sample(2700.0)["flash_l"] == 0.0, "held flash returns to 0")
+	_check(is_equal_approx(track.sample(3100.0)["glitch"], 0.5) and track.sample(3500.0)["glitch"] == 0.0, "glitch window")
+	_check(is_equal_approx(track.sample(4500.0)["spin"], PI), "spin halfway = half turn ccw")
+	_check(track.sample(5000.0)["spin"] == 0.0, "spin ends at rest")
 
 # --- Judge (순수 입력 시뮬레이션) ---
 func _make_judge(notes: Array, log: Array) -> Judge:

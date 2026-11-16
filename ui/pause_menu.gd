@@ -60,7 +60,8 @@ func _input(event: InputEvent) -> void:
 		elif k.physical_keycode == KEY_R:
 			get_viewport().set_input_as_handled()
 			retry_requested.emit()
-		elif _list.handle_key(k):
+		elif _list.handle_key(k) and is_inside_tree():
+			# "다시 시작"을 고르면 씬이 바로 다시 로드돼 이 노드가 트리에서 빠진다
 			get_viewport().set_input_as_handled()
 
 func open_pause() -> void:

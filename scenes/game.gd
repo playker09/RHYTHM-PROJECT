@@ -25,6 +25,8 @@ var score: ScoreManager
 var hud: Hud
 var pause_menu: PauseMenu
 var highway: Highway
+var hit_fx: HitFx
+var effects: EffectTrack
 
 func _ready() -> void:
 	App.bgm_stop()
@@ -75,9 +77,12 @@ func _ready() -> void:
 	add_child(spawner)
 	spawner.setup(chart, highway, judge)
 
-	var fx := HitFx.new()
-	add_child(fx)
-	fx.setup(judge, field)
+	hit_fx = HitFx.new()
+	add_child(hit_fx)
+	hit_fx.setup(judge, field)
+
+	effects = EffectTrack.new()
+	effects.setup(chart.effects)
 
 	hud = Hud.new()
 	add_child(hud)
@@ -114,6 +119,12 @@ func _process(_delta: float) -> void:
 	var now: float = conductor.get_song_time_ms()
 	var beat: Array[float] = highway.sync(now, _timing, GameConst.SCROLL_UNITS_PER_SEC * Settings.hispeed / 1000.0)
 	stage.sync(beat[0], beat[1], beat[2])
+	# 채보 연출: 곡 시간에서 바로 계산해 넘긴다 (판정과 무관). 회전은 하이웨이와 타격 이펙트만 돈다
+	var fx: Dictionary = effects.sample(now)
+	stage.set_fx(fx["flash_l"], fx["flash_r"], fx["glitch"])
+	highway.set_flash(fx["flash_l"], fx["flash_r"])
+	highway.rotation.z = fx["spin"]
+	hit_fx.rotation.z = fx["spin"]
 	if _finished:
 		return
 	hud.set_countdown(now)

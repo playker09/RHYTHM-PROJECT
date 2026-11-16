@@ -4,7 +4,8 @@
   "artist": "Test Signal",
   "audio": "song.wav",
   "offset": 0,
-  "level": 3
+  "level": 3,
+  "difficulty": "EZ"
  },
  "timing": [
   {

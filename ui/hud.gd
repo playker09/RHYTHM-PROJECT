@@ -7,6 +7,18 @@ signal result_action(action: String)    # "retry" | "quit"
 
 const COMBO_SIZE := Vector2(360.0, 150.0)
 const JUDGE_SIZE := Vector2(520.0, 96.0)
+const JUDGE_FONT_SIZE := 40
+const JUDGE_WEIGHT := 600
+const JUDGE_SPACING := 4
+const JUDGE_GLOW_LAYERS := 7         # 번지는 빛을 만드는 겹 수 (테두리 30px -> 6px)
+const JUDGE_GLOW_ALPHA := 0.055      # 한 겹의 세기. 글자 가까이일수록 여러 겹이 겹쳐 진해진다
+## 판정 글자 색 [글자, 테두리] (In Falsus 식: 채도 낮은 옅은 글자 + 같은 계열의 진한 테두리).
+## PERFECT 분홍/자주 · GREAT 회청/파랑 · MISS 살구/빨강
+const JUDGE_NEON: Array = [
+	[Color("e6b4ea"), Color("a544c4")],
+	[Color("a9bfe2"), Color("5474c6")],
+	[Color("f2a394"), Color("d8382c")],
+]
 const COUNT_SIZE := Vector2(400.0, 240.0)
 
 var _root: Control
@@ -41,6 +53,10 @@ var _judge_punch: float = 0.0
 var _shown_score: float = 0.0
 var _count_shown: int = -1
 var _score_mgr: ScoreManager
+
+var _judge_edge: Label              # 글자 둘레의 가는 색 선
+var _judge_glow: Array[Label] = []  # 뒤에서 번지는 빛 (겹쳐서 부드럽게)
+var _judge_fill: ShaderMaterial     # 글자 안쪽 세로 그라데이션
 
 func _ready() -> void:
 	_root = Control.new()
@@ -176,10 +192,17 @@ func _on_judged(_note: NoteData, grade: int, delta_ms: float, is_tick: bool) -> 
 		_meter.push(delta_ms, Ui.GRADE_COLORS[grade])
 	if is_tick and grade != JudgeLogic.Grade.MISS:
 		return
-	var col: Color = Ui.GRADE_COLORS[grade]
 	_judge.text = JudgeLogic.grade_name(grade)
-	Ui.set_color(_judge, col.lerp(Color.WHITE, 0.35))
-	Ui.glow(_judge, col, 10, 0.16)
+	_judge_edge.text = _judge.text
+	# 네온 관: 위가 조금 더 밝은 옅은 색 글자 + 가는 색 선 + 뒤에서 부드럽게 번지는 같은 색 빛
+	var fill: Color = JUDGE_NEON[grade][0]
+	var edge: Color = JUDGE_NEON[grade][1]
+	_judge_fill.set_shader_parameter("top", fill.lerp(Color.WHITE, 0.4))
+	_judge_fill.set_shader_parameter("bottom", fill)
+	_judge_edge.add_theme_color_override("font_outline_color", Color(edge.r, edge.g, edge.b, 0.9))
+	for g in _judge_glow:
+		g.text = _judge.text
+		g.add_theme_color_override("font_outline_color", Color(edge.r, edge.g, edge.b, JUDGE_GLOW_ALPHA))
 	_judge_sub.text = ""
 	if grade == JudgeLogic.Grade.GREAT:
 		_judge_sub.text = "FAST  %d" % roundi(delta_ms) if delta_ms < 0.0 else "SLOW  +%d" % roundi(delta_ms)
@@ -293,12 +316,11 @@ func _build_center() -> void:
 	_combo_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_combo_box.visible = false
 	_root.add_child(_combo_box)
-	_combo = Ui.d("", 74, Color(1, 1, 1, 0.96), 600, 0, true)
-	Ui.glow(_combo, Ui.VIOLET, 18, 0.2)
+	_combo = Ui.f("", 70, Color(1, 1, 1, 0.96), "oxanium", 600)
 	_combo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	Ui.place(_combo, 0.0, 0.0, 1.0, 0.0, 0.0, 8.0, 0.0, 100.0)
 	_combo_box.add_child(_combo)
-	var cap := Ui.caption("COMBO", Color(1, 1, 1, 0.7), 12)
+	var cap := Ui.f("COMBO", 12, Color(1, 1, 1, 0.7), "oxanium", 600, 4)
 	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	Ui.place(cap, 0.0, 0.0, 1.0, 0.0, 0.0, 96.0, 0.0, 116.0)
 	_combo_box.add_child(cap)
@@ -309,12 +331,31 @@ func _build_center() -> void:
 	_judge_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_judge_box.modulate.a = 0.0
 	_root.add_child(_judge_box)
-	_judge = Ui.d("", 40, Ui.TEXT, 700, 8, true)
-	_judge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	Ui.place(_judge, 0.0, 0.0, 1.0, 0.0, 0.0, 10.0, 0.0, 64.0)
-	_judge_box.add_child(_judge)
-	_judge_sub = Ui.d("", 14, Ui.TEXT_2, 600, 3)
-	Ui.shadow(_judge_sub, 0.6, 6)
+	# 뒤쪽 빛(글자는 투명, 넓은 옅은 테두리만) -> 그 위에 글자
+	# 아래부터: 번지는 빛(테두리 크기를 조금씩 키워 겹친 것, 더하기 합성) -> 가는 색 선 -> 글자
+	var layers: Array[Label] = []
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	for i in JUDGE_GLOW_LAYERS:
+		var g := Ui.f("", JUDGE_FONT_SIZE, Color(1, 1, 1, 0), "oxanium", JUDGE_WEIGHT, JUDGE_SPACING)
+		g.add_theme_constant_override("outline_size", 30 - i * 4)
+		g.material = add
+		_judge_glow.append(g)
+		layers.append(g)
+	_judge_edge = Ui.f("", JUDGE_FONT_SIZE, Color(1, 1, 1, 0), "oxanium", JUDGE_WEIGHT, JUDGE_SPACING)
+	_judge_edge.add_theme_constant_override("outline_size", 3)
+	layers.append(_judge_edge)
+	_judge = Ui.f("", JUDGE_FONT_SIZE, Ui.TEXT, "oxanium", JUDGE_WEIGHT, JUDGE_SPACING)
+	_judge_fill = ShaderMaterial.new()
+	_judge_fill.shader = Ui.GRADIENT_SHADER
+	_judge_fill.set_shader_parameter("span", float(JUDGE_FONT_SIZE) * 1.15)
+	_judge.material = _judge_fill
+	layers.append(_judge)
+	for l: Label in layers:
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		Ui.place(l, 0.0, 0.0, 1.0, 0.0, 0.0, 10.0, 0.0, 64.0)
+		_judge_box.add_child(l)
+	_judge_sub = Ui.f("", 14, Ui.TEXT_2, "exo", 600, 2)
 	_judge_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	Ui.place(_judge_sub, 0.0, 0.0, 1.0, 0.0, 0.0, 62.0, 0.0, 86.0)
 	_judge_box.add_child(_judge_sub)
@@ -326,14 +367,13 @@ func _build_intro() -> void:
 	_root.add_child(_intro)
 
 func _fill_intro() -> void:
-	var cap := Ui.caption("NOW PLAYING", Ui.TEXT_2, 13)
+	var cap := Ui.f("NOW PLAYING", 13, Ui.TEXT_2, "exo", 500, 5)
 	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_intro.add_child(cap)
-	var t := Ui.d(String(_song["title"]), 52, Ui.TEXT, 700)
+	var t := Ui.f(String(_song["title"]), 50, Ui.TEXT, "exo", 700, 1)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	Ui.shadow(t, 0.6, 12)
 	_intro.add_child(t)
-	var a := Ui.t(String(_song["artist"]), 17, Ui.TEXT_2)
+	var a := Ui.f(String(_song["artist"]), 17, Ui.TEXT_2, "exo", 400, 1)
 	a.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_intro.add_child(a)
 	Ui.reveal(_intro, 0.15, 0.4)
@@ -350,7 +390,6 @@ func _build_countdown() -> void:
 	Ui.place(_count_ring, 0.0, 0.0, 1.0, 1.0)
 	_count_box.add_child(_count_ring)
 	_count = Ui.d("", 110, Ui.TEXT, 600, 0, true)
-	Ui.glow(_count, Ui.VIOLET, 22, 0.25)
 	_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	Ui.place(_count, 0.0, 0.0, 1.0, 1.0)
