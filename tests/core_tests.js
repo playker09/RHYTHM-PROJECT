@@ -63,6 +63,13 @@
     ]), 'error');
     return e.length >= 5 || e.join(' / ');
   });
+  t('플릭 width: 범위 밖은 오류, 없으면 기본값, 저장 시 유지', () => {
+    const bad = lv(mk([{ type: 'flick', time: 0, x: 0.5, dir: 'left', width: 0.01 }, { type: 'flick', time: 1000, x: 0.5, dir: 'left', width: 1.5 }]), 'error');
+    const good = lv(mk([{ type: 'flick', time: 0, x: 0.5, dir: 'left', width: 0.3 }, { type: 'flick', time: 1000, x: 0.5, dir: 'left' }]), 'error');
+    const out = C.toJSON(mk([{ type: 'flick', time: 0, x: 0.5, dir: 'left', width: 0.3 }, { type: 'flick', time: 1000, x: 0.5, dir: 'left' }])).notes;
+    return (bad.length === 2 && good.length === 0 && out[0].width === 0.3 && !('width' in out[1]) && C.flickWidth(out[1]) === C.K.FLICK_DEFAULT_WIDTH)
+      || JSON.stringify([bad, good, out]);
+  });
   t('오류: 필드 시간 겹침', () => {
     const e = lv(mk([
       { type: 'field', keys: [{ time: 0, center: 0.5, width: 0.3 }, { time: 1000, center: 0.5, width: 0.3 }] },
@@ -141,6 +148,14 @@
     const [j, log] = judgeOf([{ type: 'flick', time: 1000, x: 0.5, dir: 'right' }, { type: 'flick', time: 2000, x: 0.5, dir: 'left' }]);
     j.setCursor(0.3, 990); j.setCursor(0.7, 1000);  // 오른쪽으로 빠르게 통과 → PERFECT
     j.setCursor(0.3, 1500);                          // 왼쪽 통과지만 너무 이름 (500ms 전) → 무시
+    j.advance(2131);
+    return eq(log, [['flick', G.PERFECT, false], ['flick', G.MISS, false]]) || JSON.stringify(log);
+  });
+  t('[play] 플릭 폭: 폭 안에서 움직이면 인정, 폭 밖이면 MISS', () => {
+    const [j, log] = judgeOf([{ type: 'flick', time: 1000, x: 0.5, dir: 'right', width: 0.6 }, { type: 'flick', time: 2000, x: 0.5, dir: 'right', width: 0.1 }]);
+    j.setCursor(0.25, 990); j.setCursor(0.4, 1000);  // 중심(0.5)은 안 넘었지만 폭 0.6 안 → PERFECT
+    j.setCursor(0.05, 1500);
+    j.setCursor(0.05, 1990); j.setCursor(0.3, 2000); // 폭 0.1 (0.45~0.55) 에 못 미침 → MISS
     j.advance(2131);
     return eq(log, [['flick', G.PERFECT, false], ['flick', G.MISS, false]]) || JSON.stringify(log);
   });

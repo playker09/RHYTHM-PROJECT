@@ -47,7 +47,7 @@
     chart: Core.defaultChart(), timing: null,
     dirty: false, undo: [], redo: [],
     cur: 0, pps: store.get('pps', 320), snap: store.get('snap', 16),
-    tool: 'select', flickDir: store.get('flickDir', 'right'), defWidth: store.get('defWidth', 0.3),
+    tool: 'select', flickDir: store.get('flickDir', 'right'), flickWidth: store.get('flickWidth', K.FLICK_DEFAULT_WIDTH), defWidth: store.get('defWidth', 0.3),
     sel: new Set(), draft: null, drag: null, hover: null, clip: null,
     fxSel: null, // 선택한 연출 효과 id
     playing: false, clap: store.get('clap', true), rate: 1,
@@ -261,7 +261,11 @@
           if (Math.abs(px - xr) <= 8) return { note: n, part: 'key', idx: k, edge: 'r' };
         }
       } else if (n.type === 'flick') {
-        if (Math.abs(py - yOf(n.time)) <= 12 && Math.abs(px - xAir(n.x)) <= 20) return { note: n, part: 'body' };
+        if (Math.abs(py - yOf(n.time)) <= 12) {
+          const hw = Core.flickWidth(n) * L.airW / 2, dx = px - xAir(n.x);
+          if (Math.abs(Math.abs(dx) - hw) <= 7 && Math.abs(dx) > 14) return { note: n, part: 'flickEdge' }; // 양 끝 눈금 = 폭 조절
+          if (Math.abs(dx) <= Math.max(20, hw)) return { note: n, part: 'body' };
+        }
       } else if (n.type === 'tap') {
         if (laneAt(px) === n.lane && Math.abs(py - yOf(n.time)) <= 10) return { note: n, part: 'body' };
       } else if (n.type === 'hold') {
@@ -283,7 +287,7 @@
   function noteBBox(n) {
     if (n.type === 'tap') return [L.laneX + n.lane * L.laneW, yOf(n.time) - 8, L.laneW, 16];
     if (n.type === 'hold') return [L.laneX + n.lane * L.laneW, yOf(n.end), L.laneW, yOf(n.time) - yOf(n.end)];
-    if (n.type === 'flick') return [xAir(n.x) - 16, yOf(n.time) - 10, 32, 20];
+    if (n.type === 'flick') { const hw = Math.max(16, Core.flickWidth(n) * L.airW / 2); return [xAir(n.x) - hw, yOf(n.time) - 10, hw * 2, 20]; }
     const xs = n.keys.flatMap((k) => [k.center - k.width / 2, k.center + k.width / 2]);
     const x0 = xAir(Math.min(...xs)), x1 = xAir(Math.max(...xs));
     return [x0, yOf(noteEnd(n)), x1 - x0, yOf(noteStart(n)) - yOf(noteEnd(n))];
@@ -384,7 +388,7 @@
     for (const n of list) if (n.type === 'field') drawField(n, S.sel.has(n.id));
     for (const n of list) if (n.type === 'hold') drawHold(n, S.sel.has(n.id));
     for (const n of list) if (n.type === 'tap') drawTap(n, S.sel.has(n.id));
-    for (const n of list) if (n.type === 'flick') drawFlick(n.x, yOf(n.time), n.dir, S.sel.has(n.id), 1);
+    for (const n of list) if (n.type === 'flick') drawFlick(n.x, yOf(n.time), n.dir, S.sel.has(n.id), 1, Core.flickWidth(n));
     drawFx(t0, t1);
 
     if (S.hover && S.hover.gutter) { // 시간 눈금 위: 테스트 시작 위치 미리보기
@@ -502,9 +506,13 @@
     }
     ctx.globalAlpha = 1;
   }
-  function drawFlick(xv, y, dir, sel, alpha) {
+  function drawFlick(xv, y, dir, sel, alpha, width) {
     const x = xAir(xv), s = dir === 'left' ? -1 : 1;
     ctx.globalAlpha = alpha;
+    // 폭: 옅은 띠 + 양 끝 눈금 (커서가 이 안을 화살표 방향으로 지나가면 성공)
+    const hw = (width === undefined ? K.FLICK_DEFAULT_WIDTH : width) * L.airW / 2;
+    ctx.fillStyle = COL.flick + '38'; ctx.fillRect(x - hw, y - 3, hw * 2, 6);
+    ctx.fillStyle = COL.flick; ctx.fillRect(x - hw - 1, y - 7, 2, 14); ctx.fillRect(x + hw - 1, y - 7, 2, 14);
     ctx.fillStyle = COL.flick;
     ctx.beginPath();
     ctx.moveTo(x + s * 18, y); ctx.lineTo(x, y - 11); ctx.lineTo(x, y - 4); ctx.lineTo(x - s * 16, y - 4);
@@ -573,7 +581,7 @@
     if ((S.tool === 'tap' || S.tool === 'hold') && hv.lane >= 0) {
       drawTap({ lane: hv.lane, time: hv.t }, false, 0.4);
     } else if (S.tool === 'flick' && hv.air) {
-      drawFlick(hv.x, yOf(hv.t), S.flickDir, false, 0.5);
+      drawFlick(hv.x, yOf(hv.t), S.flickDir, false, 0.5, S.flickWidth);
     } else if (S.tool === 'field' && hv.air) {
       const w = S.defWidth;
       ctx.fillStyle = '#b57bff44'; ctx.fillRect(xAir(hv.x - w / 2), yOf(hv.t) - 3, w * L.airW, 6);
@@ -590,6 +598,10 @@
     if (S.hover.fx >= 0) { setStatus(`${beatLabel(t)} · ${Math.round(t)}ms · 연출: ${FX[FX_TYPES[S.hover.fx]].name} — 클릭 = 추가, 위로 끌면 길이, 우클릭 = 삭제`); return invalidate(); }
     if (S.hover.gutter) { setStatus(`클릭: ${(t / 1000).toFixed(2)}s 부터 테스트`); return invalidate(); }
     setStatus(`${beatLabel(t)} · ${Math.round(t)}ms${S.hover.lane >= 0 ? ' · 레인 ' + K.LANE_KEYS[S.hover.lane] : S.hover.air ? ' · x=' + S.hover.x.toFixed(2) : ''}`);
+    if (S.tool === 'select' && S.hover.air) {
+      const hh = hit(px, py);
+      if (hh && hh.part === 'flickEdge') { canvas.style.cursor = 'ew-resize'; setStatus(`플릭 폭 ${Core.flickWidth(hh.note).toFixed(2)} — 끌어서 조절`); }
+    }
     invalidate();
   }
 
@@ -621,7 +633,7 @@
         if (!inAir(px)) return toast('플릭은 왼쪽 공중 영역에 배치합니다');
         const h0 = hit(px, py);
         if (h0 && h0.note.type === 'flick') return mutate(() => { S.chart.notes = S.chart.notes.filter((n) => n !== h0.note); });
-        return mutate(() => addNote({ type: 'flick', time: t, x: snapX(airVal(px), e.altKey), dir: S.flickDir }));
+        return mutate(() => addNote({ type: 'flick', time: t, x: snapX(airVal(px), e.altKey), dir: S.flickDir, width: S.flickWidth }));
       }
       case 'field': {
         if (!inAir(px)) return toast('필드는 왼쪽 공중 영역에 배치합니다');
@@ -676,6 +688,7 @@
     const snap0 = snapshot();
     if (h0.part === 'key') S.drag = { type: 'key', note: n, idx: h0.idx, edge: h0.edge, snap0 };
     else if (h0.part === 'end') S.drag = { type: 'holdEnd', note: n, snap0 };
+    else if (h0.part === 'flickEdge') S.drag = { type: 'flickW', note: n, snap0 };
     else {
       const orig = new Map(selNotes().map((o) => [o.id, JSON.parse(JSON.stringify(o))]));
       S.drag = { type: 'move', anchor: n, startT: tAt(py), startPx: px, orig, snap0 };
@@ -700,6 +713,10 @@
     } else if (d.type === 'holdEnd') {
       const end = Math.max(snapT(tAt(py)), d.note.time + 1);
       if (end !== d.note.end) { touch(); d.note.end = end; changed(); }
+    } else if (d.type === 'flickW') {
+      // 플릭 끝을 끌면 폭이 바뀐다 (중심은 그대로, 필드 폭과 같은 방식). 다음에 찍는 플릭도 이 폭을 쓴다
+      const w = clamp(round3(2 * Math.abs(snapX(airVal(px), e.altKey) - d.note.x)), K.FLICK_MIN_WIDTH, 1);
+      if (w !== Core.flickWidth(d.note)) { touch(); d.note.width = w; S.flickWidth = w; store.set('flickWidth', w); changed(); }
     } else if (d.type === 'key') {
       const n = d.note, k = n.keys[d.idx];
       if (d.edge === 'c') {
@@ -787,6 +804,13 @@
     if (e.ctrlKey) {
       S.pps = clamp(S.pps * (e.deltaY < 0 ? 1.12 : 1 / 1.12), 60, 1200);
       $('#zoom').value = clamp(S.pps, 80, 900); store.set('pps', S.pps);
+    } else if (e.altKey && (S.tool === 'flick' || S.chart.notes.some((n) => n.type === 'flick' && S.sel.has(n.id)))) {
+      // Alt+휠: 선택한 플릭의 폭, 선택이 없으면 새로 찍을 플릭의 폭
+      const d = e.deltaY < 0 ? 0.05 : -0.05;
+      const fit = (w) => clamp(round3(w + d), K.FLICK_MIN_WIDTH, 1);
+      const picked = S.chart.notes.filter((n) => n.type === 'flick' && S.sel.has(n.id));
+      if (picked.length) mutate(() => { for (const n of picked) n.width = fit(Core.flickWidth(n)); });
+      else { S.flickWidth = fit(S.flickWidth); store.set('flickWidth', S.flickWidth); invalidate(); }
     } else if (e.altKey && S.tool === 'field') {
       S.defWidth = clamp(round3(S.defWidth + (e.deltaY < 0 ? 0.02 : -0.02)), 0.02, 1);
       $('#defWidth').value = S.defWidth.toFixed(2); store.set('defWidth', S.defWidth);
@@ -1287,6 +1311,7 @@
     if (n.type === 'flick') {
       row('time (ms)', t('time', n.time));
       row('x (0~1)', numField(n.x, (x) => mutate(() => { n.x = clamp(round3(x), 0, 1); }), { step: 0.01, min: 0, max: 1 }));
+      row('width (0.1~1)', numField(Core.flickWidth(n), (x) => mutate(() => { n.width = clamp(round3(x), K.FLICK_MIN_WIDTH, 1); }), { step: 0.05, min: K.FLICK_MIN_WIDTH, max: 1 }));
       row('dir', h('select', { onchange: (e) => mutate(() => { n.dir = e.target.value; }) },
         ['left', 'right'].map((d) => h('option', { value: d, selected: n.dir === d }, d))));
     }

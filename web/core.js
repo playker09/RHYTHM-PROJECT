@@ -12,6 +12,8 @@
     FLICK_WINDOW_MS: 130,
     FLICK_MIN_SPEED: 1.0,
     FLICK_X_MARGIN: 0.04,
+    FLICK_DEFAULT_WIDTH: 0.55, // width 가 없는 플릭의 폭 (게임 GameConst 와 같다)
+    FLICK_MIN_WIDTH: 0.1,
     TICK_BEAT_FRACTION: 0.125,
     END_PAD_MS: 1500,
     // 게임 코드에 없는 에디터 휴리스틱 (경고 전용)
@@ -180,7 +182,7 @@
       const { id, ...o } = n;
       if (o.type === 'tap') { o.time = r(o.time); o.lane = r(o.lane); }
       else if (o.type === 'hold') { o.time = r(o.time); o.end = r(o.end); o.lane = r(o.lane); }
-      else if (o.type === 'flick') { o.time = r(o.time); o.x = round3(o.x); }
+      else if (o.type === 'flick') { o.time = r(o.time); o.x = round3(o.x); if (o.width !== undefined) o.width = round3(o.width); }
       else if (o.type === 'field') {
         o.keys = o.keys
           .map((k) => ({ time: r(k.time), center: round3(k.center), width: round3(k.width) }))
@@ -241,6 +243,7 @@
         if (!isNum(n.time)) { add('error', 'flick: time 이 없습니다', null, [n.id]); continue; }
         if (!(isNum(n.x) && n.x >= 0 && n.x <= 1)) add('error', `${where}: x 는 0~1`, n.time, [n.id]);
         if (n.dir !== 'left' && n.dir !== 'right') add('error', `${where}: dir 은 left/right`, n.time, [n.id]);
+        if (n.width !== undefined && !(isNum(n.width) && n.width >= K.FLICK_MIN_WIDTH && n.width <= 1)) add('error', `${where}: width 는 ${K.FLICK_MIN_WIDTH}~1`, n.time, [n.id]);
         if (n.time < 0) add('warn', `${where}: 음수 시간`, n.time, [n.id]);
         flicks.push(n);
       } else if (n.type === 'field') {
@@ -349,5 +352,8 @@
     return s;
   }
 
-  root.Core = { K, FX, FX_TYPES, Timing, clamp, round3, isNum, noteStart, noteEnd, fieldAt, newId, defaultChart, fromJSON, toJSON, validate, stats };
+  /** 플릭의 폭 (0~1). 채보에 없으면 기본값. */
+  const flickWidth = (n) => (isNum(n.width) ? n.width : K.FLICK_DEFAULT_WIDTH);
+
+  root.Core = { K, FX, FX_TYPES, Timing, clamp, round3, isNum, noteStart, noteEnd, fieldAt, flickWidth, newId, defaultChart, fromJSON, toJSON, validate, stats };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -38,6 +38,17 @@
     P.setTool('flick');
     click(P.xAir(0.5), P.yOf(43000));
     ok('플릭 배치', last().type === 'flick' && last().x === 0.5 && last().dir === 'right' && last().time === 43000, JSON.stringify(last()));
+    ok('플릭 폭: 새 플릭은 기본 폭', last().width === S.flickWidth && P.Core.flickWidth(last()) === S.flickWidth, JSON.stringify(last()));
+    { const fw0 = last(); const w0 = fw0.width; P.setTool('select'); click(P.xAir(0.5), P.yOf(43000));
+      P.canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, altKey: true, bubbles: true, cancelable: true }));
+      ok('플릭 폭: Alt+휠로 선택한 플릭 폭 조절', Math.abs(fw0.width - Math.min(1, w0 + 0.05)) < 1e-9, JSON.stringify(fw0));
+      P.undo(); ok('플릭 폭: 되돌리기', S.chart.notes.find((n) => n.type === 'flick' && n.time === 43000).width === w0); }
+    { const f0 = () => S.chart.notes.find((n) => n.type === 'flick' && n.time === 43000); const hw0 = P.Core.flickWidth(f0()) / 2;
+      ev('mousedown', P.xAir(0.5 + hw0), P.yOf(43000)); ev('mousemove', P.xAir(0.9), P.yOf(43000)); ev('mouseup', P.xAir(0.9), P.yOf(43000));
+      ok('플릭 폭: 끝을 끌어서 조절', f0().width === 0.8 && f0().x === 0.5 && S.flickWidth === 0.8, JSON.stringify(f0()));
+      ev('mousedown', P.xAir(0.5 - 0.4), P.yOf(43000)); ev('mousemove', P.xAir(0.35), P.yOf(43000)); ev('mouseup', P.xAir(0.35), P.yOf(43000));
+      ok('플릭 폭: 왼쪽 끝도 조절', f0().width === 0.3 && f0().x === 0.5, JSON.stringify(f0()));
+      P.undo(); P.undo(); ok('플릭 폭: 드래그 되돌리기', P.Core.flickWidth(f0()) === hw0 * 2, JSON.stringify(f0())); S.flickWidth = hw0 * 2; }
 
     P.setTool('field'); S.defWidth = 0.3;
     click(P.xAir(0.3), P.yOf(44000)); click(P.xAir(0.7), P.yOf(46000));

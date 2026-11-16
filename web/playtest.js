@@ -3,7 +3,7 @@
  * 기준 상수: core/game_const.gd, 카메라: scenes/game.gd (pos 0,3.7,7.4 → 0,0.4,-6, fov 46). */
 (function (root) {
   'use strict';
-  const { K, noteStart, noteEnd, fieldAt, clamp } = root.Core;
+  const { K, noteStart, noteEnd, fieldAt, flickWidth, clamp } = root.Core;
 
   const GRADE = { PERFECT: 0, GREAT: 1, MISS: 2, SKIP: -1 };
   const GRADE_NAME = ['PERFECT', 'GREAT', 'MISS'];
@@ -26,8 +26,8 @@
     return a <= K.PERFECT_MS ? GRADE.PERFECT : a <= K.FLICK_WINDOW_MS ? GRADE.GREAT : GRADE.MISS;
   }
   const fieldInside = (x, a) => Math.abs(x - a.center) <= a.width * 0.5;
-  function flickCrossed(prev, next, nx, dir) {
-    const m = K.FLICK_X_MARGIN;
+  function flickCrossed(prev, next, nx, dir, width = 0) {
+    const m = width * 0.5 + K.FLICK_X_MARGIN;
     if (dir === 'left') return next < prev && prev > nx - m && next <= nx + m;
     return next > prev && prev < nx + m && next >= nx - m;
   }
@@ -176,7 +176,7 @@
       for (let i = this.flickPtr; i < this.flicks.length; i++) {
         const r = this.flicks[i];
         if (r.time - t > K.FLICK_WINDOW_MS) break;
-        if (r.judged || !flickCrossed(prev, next, r.n.x, r.n.dir) || !flickSpeedOk(v, r.n.dir)) continue;
+        if (r.judged || !flickCrossed(prev, next, r.n.x, r.n.dir, flickWidth(r.n)) || !flickSpeedOk(v, r.n.dir)) continue;
         const delta = t - r.time, g = flickGrade(delta);
         if (g === GRADE.MISS) continue;
         r.judged = true; r.headHit = true;
@@ -448,6 +448,8 @@
         const z = zOf(r.time) + az, x = (r.n.x - 0.5) * fw, s = r.n.dir === 'left' ? -1 : 1;
         const col = r.missed ? C.missed : s < 0 ? C.flickL : C.flickR;
         c.globalAlpha = fade(z);
+        const hw = flickWidth(r.n) * fw * 0.5;
+        this._line([x - hw, ay, z], [x + hw, ay, z], col, 2); // 폭
         c.save(); c.shadowColor = col; c.shadowBlur = 12;
         for (const k of [0, 0.32]) {
           this._poly([[x - s * (0.3 - k), ay, z - 0.25], [x + s * (0.12 + k), ay, z], [x - s * (0.3 - k), ay, z + 0.25], [x - s * (0.12 - k), ay, z]], col);
