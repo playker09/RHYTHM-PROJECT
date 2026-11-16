@@ -15,6 +15,8 @@ const ROWS := [
 		"help": "노트가 소리보다 늦게 느껴지면 + 쪽으로 올리세요."},
 	{"key": "sens", "name": "마우스 감도", "lo": 0.2, "hi": 3.0, "step": 0.05, "fmt": "%.2f",
 		"help": "공중 커서가 마우스 이동에 반응하는 정도입니다."},
+	{"key": "controller", "name": "컨트롤러 사용", "toggle": true,
+		"help": "켜면 튜토리얼의 조작 안내가 컨트롤러 기준으로 나옵니다."},
 	{"key": "section", "name": "AUDIO / DISPLAY", "sub": "소리 / 화면"},
 	{"key": "volume", "name": "전체 음량", "lo": 0.0, "hi": 1.0, "step": 0.05, "fmt": "pct",
 		"help": "게임 전체 음량입니다."},
@@ -129,6 +131,8 @@ func _input(event: InputEvent) -> void:
 		if k.physical_keycode == KEY_F11 or (k.alt_pressed and k.physical_keycode == KEY_ENTER):
 			_sync.call_deferred()
 			return
+		if App.is_reset_combo(k):
+			return
 		get_viewport().set_input_as_handled()
 		match k.physical_keycode:
 			KEY_ESCAPE, KEY_TAB:
@@ -176,6 +180,8 @@ func _read(key: String) -> float:
 			return Settings.hit_volume
 		"fullscreen":
 			return 1.0 if Settings.fullscreen else 0.0
+		"controller":
+			return 1.0 if Settings.controller else 0.0
 	return 0.0
 
 func _on_row_value(v: float, key: String) -> void:
@@ -192,6 +198,8 @@ func _on_row_value(v: float, key: String) -> void:
 		"hit":
 			Settings.hit_volume = v
 			App.sfx("hit_tap", v)
+		"controller":
+			Settings.controller = v > 0.5
 		"fullscreen":
 			Settings.fullscreen = v > 0.5
 			Settings.apply_window()
@@ -213,7 +221,7 @@ class _Row extends Control:
 	signal hovered
 	signal value_set(v: float)
 
-	const H := 58.0
+	const H := 54.0
 
 	var key: String = ""
 	var help: String = ""

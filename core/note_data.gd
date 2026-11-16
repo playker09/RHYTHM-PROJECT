@@ -10,6 +10,7 @@ var end_time: float = 0.0    # ms (Hold 끝, Field 마지막 키프레임, 그 �
 var lane: int = 0            # Tap / Hold
 var x: float = 0.5           # Flick 위치 (0~1)
 var dir: String = "right"    # Flick 방향
+var width: float = 0.55      # Flick 폭 (0~1). 커서가 이 폭 안을 dir 방향으로 지나가면 성공
 var keys: Array = []         # Field 키프레임 [{time, center, width}]
 
 # 런타임

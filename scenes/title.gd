@@ -99,7 +99,7 @@ func _input(event: InputEvent) -> void:
 		var k := event as InputEventKey
 		if k.physical_keycode == KEY_F11 or k.alt_pressed:
 			return
-		if k.physical_keycode == KEY_ESCAPE:
+		if k.physical_keycode in [KEY_ESCAPE, KEY_CTRL, KEY_SHIFT, KEY_ALT, KEY_META] or k.ctrl_pressed:
 			return
 		go = true
 	elif event is InputEventMouseButton and event.pressed:

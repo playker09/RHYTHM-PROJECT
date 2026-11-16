@@ -126,7 +126,7 @@ func _check_flicks(prev_x: float, new_x: float, velocity: float, now_ms: float) 
 			break                # 정렬되어 있으므로 이후 노트는 아직 멀다
 		if n.judged:
 			continue
-		if not JudgeLogic.flick_crossed(prev_x, new_x, n.x, n.dir):
+		if not JudgeLogic.flick_crossed(prev_x, new_x, n.x, n.dir, n.width):
 			continue
 		if not JudgeLogic.flick_speed_ok(velocity, n.dir, GameConst.FLICK_MIN_SPEED):
 			continue

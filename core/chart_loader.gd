@@ -5,6 +5,8 @@ extends RefCounted
 const DIFFS: Array[String] = ["EZ", "NM", "HD"]
 const DIFF_FILES: Array[String] = ["ez.json", "nm.json", "hd.json"]
 const JACKET_FILES: Array[String] = ["jacket.png", "jacket.jpg", "jacket.webp"]
+const TUTORIAL_DIR := "tutorial"                          # 선곡 목록에 나오지 않는 연습 채보 폴더
+const TUTORIAL_CHART := "res://charts/tutorial/ez.json"
 
 ## res://charts/*/ 를 훑어 선곡 화면용 곡 목록을 만든다 (제목순).
 ## 곡 = {dir, title, artist, audio, bpm, bpm_hi, jacket, duration_ms, waveform, diffs}
@@ -15,6 +17,8 @@ static func list_songs() -> Array:
 	if dir == null:
 		return out
 	for d in dir.get_directories():
+		if d == TUTORIAL_DIR:
+			continue
 		var song := _load_song("res://charts/%s" % d, d)
 		if not song.is_empty():
 			out.append(song)
@@ -59,6 +63,46 @@ static func _load_song(base: String, fallback_title: String) -> Dictionary:
 	song["duration_ms"] = longest
 	song["waveform"] = load_waveform(base, longest)
 	return song
+
+## 곡 폴더의 guide.json(화면 안내 문구, 튜토리얼용)을 읽는다. 없으면 빈 배열.
+## 항목 = {time, end, text, pad, focus}  (ms. pad = 컨트롤러용 문구, 없으면 text 와 같다.
+##   focus = 그동안 노랗게 강조할 조작 부위: "keys"(키 패드) | "air"(공중 판정선·커서) | "")
+static func load_guides(base_dir: String) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var path := base_dir.path_join("guide.json")
+	if not FileAccess.file_exists(path):
+		return out
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var raw: Variant = (parsed as Dictionary).get("guides", []) if typeof(parsed) == TYPE_DICTIONARY else null
+	if typeof(raw) != TYPE_ARRAY:
+		push_warning("안내 문구 파일 형식이 올바르지 않습니다: " + path)
+		return out
+	for item: Variant in raw:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+		var d: Dictionary = item
+		if not _is_num(d.get("time")) or not _is_num(d.get("end")) or typeof(d.get("text")) != TYPE_STRING:
+			push_warning("잘못된 guide 무시: " + str(d))
+			continue
+		var text: String = d["text"]
+		out.append({"time": float(d["time"]), "end": float(d["end"]), "text": text,
+			"pad": str(d["pad"]) if typeof(d.get("pad")) == TYPE_STRING else text,
+			"focus": str(d["focus"]) if typeof(d.get("focus")) == TYPE_STRING else ""})
+	return out
+
+## 곡 시간 t 에 띄울 안내 문구. 없으면 "".
+static func guide_at(guides: Array[Dictionary], t: float, controller: bool) -> String:
+	for g in guides:
+		if t >= g["time"] and t < g["end"]:
+			return g["pad"] if controller else g["text"]
+	return ""
+
+## 곡 시간 t 에 강조할 조작 부위("keys" | "air"). 없으면 "".
+static func focus_at(guides: Array[Dictionary], t: float) -> String:
+	for g in guides:
+		if t >= g["time"] and t < g["end"]:
+			return g["focus"]
+	return ""
 
 static func find_jacket(base: String) -> String:
 	for f in JACKET_FILES:
@@ -256,6 +300,7 @@ static func _parse_note(d: Dictionary) -> NoteData:
 			f.end_time = f.time
 			f.x = float(d.get("x", 0.5))
 			f.dir = str(d.get("dir", "right"))
+			f.width = clampf(float(d["width"]), GameConst.FLICK_MIN_WIDTH, 1.0) if _is_num(d.get("width")) else GameConst.FLICK_DEFAULT_WIDTH
 			return f
 		"field":
 			var keys: Array = d.get("keys", [])

@@ -19,6 +19,7 @@ func _init() -> void:
 	test_field_flow()
 	test_flick_logic()
 	test_flick_flow()
+	test_flick_width_and_air_alert()
 	test_chart_summary()
 	print("%d checks, %d failed" % [_checks, _fails])
 	quit(1 if _fails > 0 else 0)
@@ -365,6 +366,46 @@ func test_score_rank() -> void:
 	s.free()
 
 # --- 선곡 화면용 요약 ---
+func test_flick_width_and_air_alert() -> void:
+	# 폭 0 = 한 줄을 가로질러야 한다. 폭이 있으면 그 안에서 움직이기만 해도 된다
+	_check(not JudgeLogic.flick_crossed(0.20, 0.30, 0.5, "right"), "flick width 0: moving left of the line does not count")
+	_check(JudgeLogic.flick_crossed(0.20, 0.30, 0.5, "right", 0.6), "flick width: movement inside the span counts")
+	_check(not JudgeLogic.flick_crossed(0.05, 0.10, 0.5, "right", 0.6), "flick width: movement outside the span does not count")
+	_check(not JudgeLogic.flick_crossed(0.30, 0.20, 0.5, "right", 0.6), "flick width: wrong direction does not count")
+	var n: NoteData = ChartLoader._parse_note({"type": "flick", "time": 0, "x": 0.5, "dir": "left"})
+	_check(is_equal_approx(n.width, GameConst.FLICK_DEFAULT_WIDTH), "flick without width uses the default")
+	n = ChartLoader._parse_note({"type": "flick", "time": 0, "x": 0.5, "dir": "left", "width": 0.3})
+	_check(is_equal_approx(n.width, 0.3), "flick width is read")
+	n = ChartLoader._parse_note({"type": "flick", "time": 0, "x": 0.5, "dir": "left", "width": 0.0})
+	_check(is_equal_approx(n.width, GameConst.FLICK_MIN_WIDTH), "flick width is clamped")
+	# 스카이 알림: 모든 Flick 을 방향(LEFT/RIGHT)으로 알린다. Field 는 알리지 않는다
+	var mk_flick := func(time: float, dir: String) -> NoteData:
+		var an := NoteData.new()
+		an.type = NoteData.Type.FLICK
+		an.time = time
+		an.end_time = time
+		an.dir = dir
+		return an
+	var mk_field := func(t0: float, t1: float, center: float) -> NoteData:
+		var an := NoteData.new()
+		an.type = NoteData.Type.FIELD
+		an.keys = [{"time": t0, "center": center, "width": 0.3}, {"time": t1, "center": 0.5, "width": 0.3}]
+		an.time = t0
+		an.end_time = t1
+		return an
+	var alert := AirAlert.new()
+	alert.setup([NoteData.make_tap(1000.0, 0), mk_flick.call(5000.0, "left"), mk_flick.call(6000.0, "right"),
+		mk_field.call(10000.0, 12000.0, 0.7), mk_field.call(12300.0, 13000.0, 0.5), mk_field.call(14000.0, 15000.0, 0.5),
+		mk_flick.call(14500.0, "right")])
+	_check(alert.entry_times() == [5000.0, 6000.0, 14500.0], "air alert: every flick, no fields")
+	_check(alert.sample(3000.0) == Vector4.ZERO and alert.sample(6001.0) == Vector4.ZERO, "air alert is off outside the lead-in")
+	var mid: Vector4 = alert.sample(5000.0 - AirAlert.LEAD_MS * 0.5)
+	_check(mid.y == 1.0 and mid.w == 0.0, "left flick -> LEFT panel only")
+	_check(alert.sample(5000.0 - AirAlert.LEAD_MS * 0.9).x > mid.x and mid.x > alert.sample(5000.0 - AirAlert.LEAD_MS * 0.1).x, "air alert flashes once, then settles")
+	mid = alert.sample(6000.0 - AirAlert.LEAD_MS * 0.5)
+	_check(mid.y == 0.0 and mid.w == 1.0, "right flick -> RIGHT panel only")
+	_check(alert.sample(10000.0 - AirAlert.LEAD_MS * 0.5) == Vector4.ZERO and alert.sample(12300.0 - AirAlert.LEAD_MS * 0.5) == Vector4.ZERO, "fields do not raise the alert")
+
 func test_chart_summary() -> void:
 	var tm := TimingMap.new([{"time": 0, "bpm": 120}, {"time": 1000, "bpm": 60}])
 	_check(is_equal_approx(tm.beat_at(500.0), 1.0), "beat_at first segment")
@@ -386,6 +427,19 @@ func test_chart_summary() -> void:
 	_check(ChartLoader.nearest_diff([{"a": 1}, {}, {"a": 1}], 1) == 0, "nearest_diff tie -> easier")
 	_check(ChartLoader.nearest_diff([{}, {}, {}], 1) == -1, "nearest_diff none -> -1")
 	_check(ChartLoader.diff_of_path("res://charts/x/hd.json") == 2, "diff_of_path")
+	# 튜토리얼: 선곡 목록에는 없고, 채보와 안내 문구는 읽힌다
+	var listed: bool = false
+	for s: Dictionary in list:
+		listed = listed or String(s["dir"]).ends_with("/" + ChartLoader.TUTORIAL_DIR)
+	_check(not listed, "tutorial is hidden from list_songs")
+	var tut: ChartData = ChartLoader.load_chart(ChartLoader.TUTORIAL_CHART)
+	_check(tut != null and tut.notes.size() > 0 and tut.end_time_ms() <= 40000.0, "tutorial chart loads (about 40s)")
+	var guides: Array[Dictionary] = ChartLoader.load_guides("res://charts/tutorial")
+	_check(guides.size() >= 4, "tutorial guides load")
+	_check(ChartLoader.guide_at(guides, 5000.0, false).contains("A S D F"), "guide_at picks the active text")
+	_check(ChartLoader.guide_at(guides, 25000.0, true) != ChartLoader.guide_at(guides, 25000.0, false), "guide_at controller variant")
+	_check(ChartLoader.focus_at(guides, 5000.0) == "keys" and ChartLoader.focus_at(guides, 25000.0) == "air" and ChartLoader.focus_at(guides, -1000.0) == "", "focus_at picks the control to highlight")
+	_check(ChartLoader.guide_at(guides, -1000.0, false) == "" and ChartLoader.load_guides("res://charts/sample").is_empty(), "no guide outside ranges / without guide.json")
 	# 오디오 4초 중 채보 2초 구간만 쓰고, 그 구간 최댓값을 1로 맞춘다
 	var w: PackedFloat32Array = ChartLoader.resample_peaks(PackedFloat32Array([0.5, 0.25, 1.0, 1.0]), 4000.0, 2000.0, 2)
 	_check(w.size() == 2 and is_equal_approx(w[0], 1.0) and is_equal_approx(w[1], 0.5), "waveform crops to chart length")

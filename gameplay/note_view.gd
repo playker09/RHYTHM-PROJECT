@@ -29,6 +29,8 @@ static var _slab_mesh: ArrayMesh
 
 var kind: int = Kind.TAP
 var _mats: Array[ShaderMaterial] = []   # color/alpha 를 함께 바꾸는 머티리얼
+var _flick_arrow: MeshInstance3D
+var _flick_bar: MeshInstance3D
 var _head_mat: ShaderMaterial
 var _body_mat: ShaderMaterial
 var _body: MeshInstance3D
@@ -85,6 +87,7 @@ func _build() -> void:
 
 func _build_flick() -> void:
 	var arrow := MeshInstance3D.new()
+	_flick_arrow = arrow
 	var qm := QuadMesh.new()
 	qm.size = FLICK_SIZE
 	arrow.mesh = qm
@@ -96,6 +99,7 @@ func _build_flick() -> void:
 	_mats.append(_head_mat)
 	# 공중 판 위의 가로 막대: 판정 시각을 읽기 쉽게 한다
 	var bar := MeshInstance3D.new()
+	_flick_bar = bar
 	var pm := PlaneMesh.new()
 	pm.size = Vector2(1.7, 0.05)
 	bar.mesh = pm
@@ -104,7 +108,12 @@ func _build_flick() -> void:
 	add_child(bar)
 	_mats.append(bar_mat)
 
-func set_flick_dir(dir: String) -> void:
+## width = 플릭 폭(0~1). 판이 그 폭만큼 넓어지고, 쐐기 모양은 늘어나지 않고 진행 방향 끝에 붙는다.
+func set_flick(dir: String, width: float) -> void:
+	var stretch: float = width * GameConst.FIELD_WIDTH / FLICK_SIZE.x
+	_flick_arrow.scale.x = stretch
+	_flick_bar.scale.x = stretch
+	_head_mat.set_shader_parameter("stretch", stretch)
 	var left: bool = dir == "left"
 	_base_color = FLICK_LEFT_COLOR if left else FLICK_RIGHT_COLOR
 	_head_mat.set_shader_parameter("mirror", -1.0 if left else 1.0)

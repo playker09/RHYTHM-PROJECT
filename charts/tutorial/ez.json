@@ -1,0 +1,119 @@
+{
+ "meta": {
+  "title": "Tutorial",
+  "artist": "How to Play",
+  "audio": "song.wav",
+  "offset": 0,
+  "level": 1,
+  "difficulty": "EZ"
+ },
+ "timing": [
+  {
+   "time": 0,
+   "bpm": 120
+  }
+ ],
+ "notes": [
+  {
+   "type": "tap",
+   "time": 4000,
+   "lane": 0
+  },
+  {
+   "type": "tap",
+   "time": 5500,
+   "lane": 1
+  },
+  {
+   "type": "tap",
+   "time": 7000,
+   "lane": 2
+  },
+  {
+   "type": "tap",
+   "time": 8500,
+   "lane": 3
+  },
+  {
+   "type": "tap",
+   "time": 10000,
+   "lane": 3
+  },
+  {
+   "type": "tap",
+   "time": 11000,
+   "lane": 2
+  },
+  {
+   "type": "tap",
+   "time": 12000,
+   "lane": 1
+  },
+  {
+   "type": "tap",
+   "time": 13000,
+   "lane": 0
+  },
+  {
+   "type": "hold",
+   "time": 17000,
+   "end": 18000,
+   "lane": 1
+  },
+  {
+   "type": "hold",
+   "time": 19500,
+   "end": 20500,
+   "lane": 2
+  },
+  {
+   "type": "field",
+   "keys": [
+    {
+     "time": 24500,
+     "center": 0.5,
+     "width": 0.45
+    },
+    {
+     "time": 26000,
+     "center": 0.3,
+     "width": 0.4
+    },
+    {
+     "time": 27500,
+     "center": 0.7,
+     "width": 0.4
+    },
+    {
+     "time": 29000,
+     "center": 0.5,
+     "width": 0.4
+    }
+   ]
+  },
+  {
+   "type": "flick",
+   "time": 32500,
+   "x": 0.5,
+   "dir": "right"
+  },
+  {
+   "type": "flick",
+   "time": 34500,
+   "x": 0.5,
+   "dir": "left"
+  },
+  {
+   "type": "flick",
+   "time": 36500,
+   "x": 0.5,
+   "dir": "right"
+  },
+  {
+   "type": "flick",
+   "time": 38500,
+   "x": 0.5,
+   "dir": "left"
+  }
+ ]
+}

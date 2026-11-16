@@ -5,6 +5,7 @@ extends Control
 var _world: MenuWorld
 var _list: MenuList
 var _settings: SettingsPanel
+var _ask: ConfirmDialog
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -25,6 +26,13 @@ func _ready() -> void:
 	_settings = SettingsPanel.new()
 	add_child(_settings)
 
+	# 첫 실행(또는 시연용 초기화 뒤): 튜토리얼을 할지 한 번 묻는다
+	_ask = ConfirmDialog.new()
+	add_child(_ask)
+	_ask.answered.connect(_on_tutorial_answer)
+	if not Settings.tutorial_asked:
+		_ask.open("FIRST PLAY", "튜토리얼을 진행하시겠어요?", "약 40초 동안 기본 조작을 연습합니다. 메인 메뉴에서 언제든 다시 할 수 있습니다.")
+
 func _build_header() -> void:
 	var head := Ui.hbox(14)
 	Ui.place(head, 0.0, 0.0, 1.0, 0.0, 72.0, 40.0, -72.0, 70.0)
@@ -41,10 +49,11 @@ func _build_menu() -> void:
 	_list = MenuList.new()
 	_list.setup([
 		{"id": "play", "name": "PLAY", "sub": "곡 선택"},
+		{"id": "tutorial", "name": "TUTORIAL", "sub": "조작 연습"},
 		{"id": "settings", "name": "SETTINGS", "sub": "설정"},
 		{"id": "quit", "name": "QUIT", "sub": "게임 종료"},
 	], 62, 92.0)
-	Ui.place(_list, 0.0, 0.5, 0.6, 0.5, 0.0, -150.0, 0.0, 126.0)
+	Ui.place(_list, 0.0, 0.5, 0.6, 0.5, 0.0, -196.0, 0.0, 172.0)
 	add_child(_list)
 	_list.activated.connect(_on_activated)
 	Ui.slide_in(_list, -80.0, 0.12)
@@ -118,7 +127,7 @@ func _build_footer(songs: Array) -> void:
 	Ui.reveal(foot, 0.4)
 
 func _input(event: InputEvent) -> void:
-	if _settings.is_open() or App.is_busy():
+	if _settings.is_open() or _ask.is_open() or App.is_busy():
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var k := event as InputEventKey
@@ -137,11 +146,20 @@ func _on_activated(id: String) -> void:
 		"play":
 			App.sfx("confirm")
 			App.goto(App.SELECT_SCENE)
+		"tutorial":
+			App.sfx("confirm")
+			App.start_tutorial()
 		"settings":
 			_settings.open()
 		"quit":
 			App.sfx("back")
 			get_tree().quit()
+
+func _on_tutorial_answer(yes: bool) -> void:
+	Settings.tutorial_asked = true
+	Settings.save_settings()
+	if yes:
+		App.start_tutorial()
 
 ## 왼쪽에서 오른쪽으로 사라지는 그늘
 class _SideShade extends Control:

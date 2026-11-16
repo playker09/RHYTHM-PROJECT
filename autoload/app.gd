@@ -32,10 +32,12 @@ const SFX := {
 
 var selected_chart: String = DEFAULT_CHART
 var selected_diff: int = 1            # 난이도 슬롯 (ChartLoader.DIFFS). 곡을 바꿔도 유지
+var tutorial: bool = false            # 지금 게임 씬이 튜토리얼인지 (선택 곡은 건드리지 않는다)
 
 var _wipe: ColorRect
 var _wipe_mat: ShaderMaterial
 var _busy: bool = false
+var _resetting: bool = false
 var _sfx_players: Array[AudioStreamPlayer] = []
 var _sfx_next: int = 0
 var _preview: AudioStreamPlayer
@@ -77,15 +79,37 @@ func _ready() -> void:
 		add_child(b)
 		_bgm_players.append(b)
 
-## 어느 화면에서든 전체 화면 전환
+## 어느 화면에서든 전체 화면 전환 / 시연용 초기화
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		var k := event as InputEventKey
+		if is_reset_combo(k):
+			get_viewport().set_input_as_handled()
+			demo_reset()
+			return
 		if k.physical_keycode == KEY_F11 or (k.alt_pressed and k.physical_keycode == KEY_ENTER):
 			get_viewport().set_input_as_handled()
 			Settings.fullscreen = not Settings.fullscreen
 			Settings.apply_window()
 			Settings.save_settings()
+
+## 시연용 초기화 키: Ctrl + Shift + Alt + F9
+static func is_reset_combo(k: InputEventKey) -> bool:
+	return k.physical_keycode == KEY_F9 and k.ctrl_pressed and k.shift_pressed and k.alt_pressed
+
+## 시연용 초기화: 플레이 설정을 기본값으로 되돌리고(음량/기록은 유지) 타이틀로 돌아간다.
+func demo_reset() -> void:
+	if _resetting:
+		return
+	_resetting = true
+	Settings.reset_demo()
+	selected_chart = DEFAULT_CHART
+	selected_diff = 1
+	tutorial = false
+	while _busy:
+		await get_tree().process_frame
+	await goto(TITLE_SCENE)
+	_resetting = false
 
 ## 와이프로 덮기 -> 씬 교체 -> 걷어내기. progress 0~1 = 덮기, 1~2 = 걷기.
 func goto(scene_path: String) -> void:
@@ -118,11 +142,21 @@ func is_busy() -> bool:
 	return _busy
 
 func start_game(chart_path: String) -> void:
+	tutorial = false
 	selected_chart = chart_path
 	var slot: int = ChartLoader.diff_of_path(chart_path)
 	if slot >= 0:
 		selected_diff = slot
 	goto(GAME_SCENE)
+
+## 튜토리얼(charts/tutorial)을 시작한다. 기록/선택 곡은 바뀌지 않는다.
+func start_tutorial() -> void:
+	tutorial = true
+	goto(GAME_SCENE)
+
+## 게임 씬이 불러올 채보
+func current_chart() -> String:
+	return ChartLoader.TUTORIAL_CHART if tutorial else selected_chart
 
 # --- 효과음 ---
 ## gain: 0~1 선형 음량

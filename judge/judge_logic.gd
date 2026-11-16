@@ -36,9 +36,10 @@ static func field_tick_result(inside: bool, outside_for_ms: float, grace_ms: flo
 		return GRADE_SKIP
 	return Grade.MISS
 
-## 커서가 prev_x -> new_x 로 움직이며 note_x 를 dir 방향("left"/"right")으로 가로질렀는가
-static func flick_crossed(prev_x: float, new_x: float, note_x: float, dir: String) -> bool:
-	var m: float = GameConst.FLICK_X_MARGIN
+## 커서가 prev_x -> new_x 로 dir 방향("left"/"right")으로 움직이며 플릭의 폭(note_x 를 중심으로 width) 안을 지나갔는가.
+## width 0 이면 note_x 한 줄을 가로지르는 것과 같다.
+static func flick_crossed(prev_x: float, new_x: float, note_x: float, dir: String, width: float = 0.0) -> bool:
+	var m: float = width * 0.5 + GameConst.FLICK_X_MARGIN
 	if dir == "left":
 		return new_x < prev_x and prev_x > note_x - m and new_x <= note_x + m
 	return new_x > prev_x and prev_x < note_x + m and new_x >= note_x - m

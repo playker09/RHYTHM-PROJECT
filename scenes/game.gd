@@ -2,6 +2,7 @@ extends Node3D
 ## 플레이 씬 조립. 각 모듈을 만들어 연결만 한다.
 
 const END_PADDING_MS := 1800.0
+const TUTORIAL_END_MS := 3200.0       # 튜토리얼은 마지막 안내 문구를 읽을 시간을 더 준다
 const BANNER_DELAY_MS := 350.0        # 마지막 노트 뒤 FULL COMBO 문구가 뜨기까지
 const SPEED_STEP := 0.1
 const SPEED_MIN := 0.5
@@ -14,6 +15,9 @@ var _end_ms: float = 0.0
 var _finished: bool = false
 var _banner_done: bool = false
 var _best_before: Dictionary = {}
+var _chart_path: String = ""
+var _tutorial: bool = false           # 튜토리얼: 기록/결과 화면 없이 끝나면 메인 메뉴로
+var _guides: Array[Dictionary] = []   # 곡 폴더 guide.json 의 화면 안내 문구
 
 var stage: Stage
 var conductor: Conductor
@@ -27,10 +31,13 @@ var pause_menu: PauseMenu
 var highway: Highway
 var hit_fx: HitFx
 var effects: EffectTrack
+var air_alert: AirAlert
 
 func _ready() -> void:
 	App.bgm_stop()
-	var chart: ChartData = ChartLoader.load_chart(App.selected_chart)
+	_chart_path = App.current_chart()
+	_tutorial = App.tutorial
+	var chart: ChartData = ChartLoader.load_chart(_chart_path)
 	if chart == null:
 		return
 	var stream: AudioStream = load(chart.base_dir.path_join(chart.audio))
@@ -81,6 +88,9 @@ func _ready() -> void:
 	add_child(hit_fx)
 	hit_fx.setup(judge, field)
 
+	air_alert = AirAlert.new()
+	air_alert.setup(chart.notes)
+
 	effects = EffectTrack.new()
 	effects.setup(chart.effects)
 
@@ -89,7 +99,7 @@ func _ready() -> void:
 	hud.bind(score, judge)
 	hud.set_song({
 		"title": chart.title, "artist": chart.artist, "level": chart.level,
-		"diff": ChartLoader.diff_of_path(App.selected_chart),
+		"diff": -1 if _tutorial else ChartLoader.diff_of_path(_chart_path),
 		"jacket": ChartLoader.find_jacket(chart.base_dir),
 	})
 	hud.result_action.connect(_on_result_action)
@@ -99,12 +109,13 @@ func _ready() -> void:
 	add_child(pause_menu)
 	pause_menu.resume_requested.connect(_resume)
 	pause_menu.retry_requested.connect(_restart)
-	pause_menu.quit_requested.connect(func(): App.goto(App.SELECT_SCENE))
+	pause_menu.quit_requested.connect(_leave)
 	pause_menu.settings_changed.connect(_apply_settings)
 
-	_best_before = App.get_record(App.selected_chart)
+	_best_before = App.get_record(_chart_path)
+	_guides = ChartLoader.load_guides(chart.base_dir)
 	_chart_end_ms = chart.end_time_ms()
-	_end_ms = _chart_end_ms + END_PADDING_MS
+	_end_ms = _chart_end_ms + (TUTORIAL_END_MS if _tutorial else END_PADDING_MS)
 	Input.mouse_mode = Input.MOUSE_MODE_CONFINED_HIDDEN
 	conductor.play(stream, 0.0, GameConst.LEAD_IN_MS)
 
@@ -123,22 +134,33 @@ func _process(_delta: float) -> void:
 	var fx: Dictionary = effects.sample(now)
 	stage.set_fx(fx["flash_l"], fx["flash_r"], fx["glitch"])
 	highway.set_flash(fx["flash_l"], fx["flash_r"])
+	var alert: Vector4 = air_alert.sample(now)    # 스카이 알림 (판정과 무관): 판정선 깜빡임 + 화면 옆 LEFT/RIGHT 패널
+	highway.set_air_alert(maxf(alert.x * alert.y, alert.z * alert.w))
+	hud.set_air_alert(alert)
 	highway.rotation.z = fx["spin"]
 	hit_fx.rotation.z = fx["spin"]
 	if _finished:
 		return
 	hud.set_countdown(now)
+	if not _guides.is_empty():
+		hud.set_guide(ChartLoader.guide_at(_guides, now, Settings.controller))
+		highway.set_focus(ChartLoader.focus_at(_guides, now))
 	hud.set_progress(now, _chart_end_ms)
 	if not _banner_done and now > _chart_end_ms + BANNER_DELAY_MS:
 		_banner_done = true
-		if score.rank() == "AP":
+		if _tutorial:
+			hud.show_banner("TUTORIAL CLEAR", Ui.CYAN)
+		elif score.rank() == "AP":
 			hud.show_banner("ALL PERFECT", Ui.GOLD)
 		elif score.is_full_combo():
 			hud.show_banner("FULL COMBO", Ui.CYAN)
 	if now > _end_ms:
 		_finished = true
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		var is_new: bool = App.submit_record(App.selected_chart, score.score, score.rank(), score.max_combo, score.accuracy(), score.is_full_combo())
+		if _tutorial:
+			_leave()
+			return
+		var is_new: bool = App.submit_record(_chart_path, score.score, score.rank(), score.max_combo, score.accuracy(), score.is_full_combo())
 		hud.show_result(score, is_new, _best_before)
 
 func _input(event: InputEvent) -> void:
@@ -148,7 +170,7 @@ func _input(event: InputEvent) -> void:
 				if pause_menu != null and pause_menu.visible:
 					pass    # 메뉴가 자체 처리
 				elif _finished:
-					App.goto(App.SELECT_SCENE)
+					_leave()
 				else:
 					_pause()
 			KEY_R:
@@ -178,6 +200,10 @@ func _resume() -> void:
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_CONFINED_HIDDEN
 
+## 플레이를 떠난다: 곡 선택으로, 튜토리얼이면 메인 메뉴로
+func _leave() -> void:
+	App.goto(App.MENU_SCENE if _tutorial else App.SELECT_SCENE)
+
 func _restart() -> void:
 	if App.is_busy():
 		return
@@ -193,7 +219,7 @@ func _on_result_action(action: String) -> void:
 		"retry":
 			_restart()
 		"quit":
-			App.goto(App.SELECT_SCENE)
+			_leave()
 
 func _change_speed(step: float) -> void:
 	Settings.hispeed = clampf(snappedf(Settings.hispeed + step, SPEED_STEP), SPEED_MIN, SPEED_MAX)

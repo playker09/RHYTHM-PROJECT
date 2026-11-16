@@ -12,7 +12,9 @@ const MAX_SCORE := 1000000
 const FLICK_WINDOW_MS := 130.0      # 노트 시각 +-이 안에서 통과해야 성공 (PERFECT_MS 이내면 PERFECT, 나머지 GREAT)
 const FLICK_MIN_SPEED := 1.0        # 최소 커서 속도 (0~1 단위/초). 미세한 흔들림 무시용
 
-const FLICK_X_MARGIN := 0.04         # 통과선 좌우 여유 (0~1 단위). 선 근처까지만 가도 인정
+const FLICK_X_MARGIN := 0.04         # 플릭 폭 좌우 여유 (0~1 단위). 가장자리 근처까지만 가도 인정
+const FLICK_DEFAULT_WIDTH := 0.55    # 채보에 width 가 없는 플릭의 폭 (0~1 단위, 패턴 툴 core.js 의 K 와 같다)
+const FLICK_MIN_WIDTH := 0.1
 
 const LANE_COUNT := 4
 const TICK_BEAT_FRACTION := 0.125   # Field/Hold tick 간격 (1/8박)

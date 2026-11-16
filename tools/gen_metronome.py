@@ -1,6 +1,6 @@
-"""테스트용 더미 곡 생성 (WAV, 44.1kHz, 16-bit mono) -> charts/sample/song.wav
+"""테스트용 더미 곡 생성 (WAV, 44.1kHz, 16-bit mono) -> charts/<폴더>/song.wav (기본 sample)
 박마다 클릭(마디 첫 박 강조) + 킥/하이햇/베이스/패드를 얹은 메트로놈. 싱크 검증용이라 박 위치는 정확히 격자에 있다.
-사용법: python tools/gen_metronome.py [bpm] [seconds]
+사용법: python tools/gen_metronome.py [bpm] [seconds] [폴더]   (튜토리얼: 120 45 tutorial)
 """
 import math
 import random
@@ -14,7 +14,8 @@ seconds = float(sys.argv[2]) if len(sys.argv) > 2 else 60.0
 SR = 44100
 N = int(SR * seconds)
 BEAT = 60.0 / bpm
-OUT = Path(__file__).resolve().parent.parent / "charts" / "sample" / "song.wav"
+OUT = Path(__file__).resolve().parent.parent / "charts" / (sys.argv[3] if len(sys.argv) > 3 else "sample") / "song.wav"
+OUT.parent.mkdir(parents=True, exist_ok=True)
 buf = [0.0] * N
 rng = random.Random(7)
 TAU = 2.0 * math.pi

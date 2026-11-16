@@ -15,6 +15,8 @@ const PAD_COLOR := Color(0.5, 0.52, 0.95)
 const AIR_LINE_COLOR := Color(0.82, 0.7, 1.0)
 const CURSOR_COLOR := Color(0.75, 0.97, 1.0)
 const CURSOR_OUT_COLOR := Color(1.0, 0.3, 0.32)
+const ALERT_COLOR := Color(0.92, 0.86, 1.0)      # 스카이 알림 (공중 판정선이 밝게 깜빡인다)
+const FOCUS_COLOR := Color(1.0, 0.78, 0.12)      # 튜토리얼에서 "여기를 조작하세요" 강조 (노랑)
 
 # 그리는 순서 (반투명끼리). 작을수록 먼저 그린다.
 const ORDER_FLOOR := -4
@@ -47,6 +49,15 @@ var _cursor: Node3D
 var _cursor_mat: ShaderMaterial
 var _cursor_pole: ShaderMaterial
 var _cursor_x: float = 0.0
+var _cursor_out: bool = false
+var _air_mats: Array[ShaderMaterial] = []
+var _focus: String = ""             # "" | "keys" | "air"
+var _focus_keys: float = 0.0        # 0~1 로 부드럽게 따라간다
+var _focus_air: float = 0.0
+var _focus_t: float = 0.0
+var _key_frame: Node3D
+var _key_frame_mat: ShaderMaterial
+var _alert: float = 0.0             # 스카이 알림 세기 0~1
 
 ## depth 와 정렬 순서를 넣은 셰이더 머티리얼
 static func fx_mat(shader: Shader, order: int, params: Dictionary = {}) -> ShaderMaterial:
@@ -121,6 +132,19 @@ func _ready() -> void:
 		_add_beam(beam, Vector2(w * 0.96, 2.6), Vector3(0.0, 1.3, 0.0), false, 0.16, 2.4)
 		_beams.append(beam)
 
+	# 튜토리얼 강조용: 키 패드 줄을 두르는 노란 테두리 (평소엔 숨김)
+	_key_frame = Node3D.new()
+	_key_frame.visible = false
+	add_child(_key_frame)
+	_key_frame_mat = fx_mat(NEON_SHADER, ORDER_FX, {"color": FOCUS_COLOR, "energy": 1.6})
+	var fw2: float = w * count + 0.3
+	for dz: float in [-0.56, 0.56]:
+		var bar := _add_plane(Vector2(fw2, 0.045), Vector3(0.0, 0.05, PAD_Z + dz), _key_frame_mat)
+		bar.reparent(_key_frame)
+	for dx: float in [-0.5, 0.5]:
+		var post := _add_plane(Vector2(0.045, 1.12), Vector3(dx * fw2, 0.05, PAD_Z), _key_frame_mat)
+		post.reparent(_key_frame)
+
 	_build_air()
 
 ## 옆 구조물: 레인 가장자리에서 바깥 위로 기운 유리판
@@ -142,6 +166,7 @@ func _build_air() -> void:
 	var z: float = GameConst.AIR_Z
 	var air_mat := fx_mat(NEON_SHADER, ORDER_AIR, {"color": AIR_LINE_COLOR, "energy": 1.8, "x_fade": fw * 0.5 + 2.2})
 	_add_plane(Vector2(fw + 4.4, 0.03), Vector3(0.0, y, z), air_mat)
+	_air_mats.append(air_mat)
 	# 커서가 움직일 수 있는 양 끝 표시 (세로 꺾쇠)
 	for sd: float in [-1.0, 1.0]:
 		var tick := MeshInstance3D.new()
@@ -149,6 +174,7 @@ func _build_air() -> void:
 		qm.size = Vector2(0.03, 0.4)
 		tick.mesh = qm
 		tick.material_override = fx_mat(NEON_SHADER, ORDER_AIR, {"color": AIR_LINE_COLOR, "energy": 1.8})
+		_air_mats.append(tick.material_override)
 		tick.position = Vector3(sd * fw * 0.5, y, z)
 		add_child(tick)
 
@@ -209,6 +235,42 @@ func _process(delta: float) -> void:
 	_floor_mat.set_shader_parameter("press", v)
 	if _cursor != null:
 		_cursor.position.x = lerpf(_cursor.position.x, _cursor_x, 1.0 - exp(-delta * 60.0))
+	_update_focus(delta)
+
+## 스카이 알림: 곧 공중 노트가 나온다. strength 0~1 만큼 공중 판정선이 밝아진다 (옆 패널은 Hud 가 그린다). 매 프레임 호출.
+func set_air_alert(strength: float) -> void:
+	_alert = strength
+
+## 튜토리얼 강조: "keys" = 키 패드(A S D F), "air" = 공중 판정선과 커서, "" = 없음. 매 프레임 넘겨도 된다.
+func set_focus(kind: String) -> void:
+	_focus = kind
+
+func _update_focus(delta: float) -> void:
+	if _key_frame == null:
+		return
+	var k: float = 1.0 - exp(-delta * 8.0)
+	_focus_keys = lerpf(_focus_keys, 1.0 if _focus == "keys" else 0.0, k)
+	_focus_air = lerpf(_focus_air, 1.0 if _focus == "air" else 0.0, k)
+	_focus_t += delta
+	var pulse: float = 0.62 + 0.38 * sin(_focus_t * 6.0)
+	# 키 패드: 패드와 글자가 노랗게 맥동하고 둘레에 테두리가 켜진다
+	var a: float = _focus_keys * pulse
+	for i in _pad_mats.size():
+		_pad_mats[i].set_shader_parameter("color", PAD_COLOR.lerp(FOCUS_COLOR, a))
+		var base: Color = Color(1.0, 1.0, 1.0) if _press_target[i] > 0.5 else Color(0.82, 0.86, 1.0, 0.8)
+		_pad_labels[i].modulate = base.lerp(Color(1.0, 0.86, 0.3), _focus_keys)
+	_hit_mat.set_shader_parameter("color", HIT_COLOR.lerp(FOCUS_COLOR, a * 0.85))    # 노트를 맞히는 판정선도 같이
+	_key_frame.visible = _focus_keys > 0.02
+	_key_frame_mat.set_shader_parameter("alpha", a)
+	# 공중: 판정선과 양 끝 꺾쇠, 커서가 노랗게
+	var b: float = _focus_air * pulse
+	for m in _air_mats:
+		m.set_shader_parameter("color", AIR_LINE_COLOR.lerp(FOCUS_COLOR, b).lerp(ALERT_COLOR, _alert * 0.7))
+		m.set_shader_parameter("energy", 1.8 + 0.8 * b + 1.5 * _alert)
+	if not _cursor_out:
+		var c: Color = CURSOR_COLOR.lerp(FOCUS_COLOR, _focus_air * (0.5 + 0.5 * pulse))
+		_cursor_mat.set_shader_parameter("color", c)
+		_cursor_pole.set_shader_parameter("color", c)
 
 ## 연출 발광 (0~1). 왼쪽/오른쪽 옆 패널이 번쩍인다.
 func set_flash(left: float, right: float) -> void:
@@ -219,6 +281,7 @@ func set_cursor(x: float, outside: bool) -> void:
 	if _cursor == null:
 		return
 	_cursor_x = (x - 0.5) * GameConst.FIELD_WIDTH
+	_cursor_out = outside
 	var c: Color = CURSOR_OUT_COLOR if outside else CURSOR_COLOR
 	_cursor_mat.set_shader_parameter("color", c)
 	_cursor_pole.set_shader_parameter("color", c)

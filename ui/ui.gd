@@ -32,6 +32,7 @@ const FACES := {
 	"exo": "res://assets/fonts/Exo2-VF.ttf",
 	"exo_italic": "res://assets/fonts/Exo2-Italic-VF.ttf",
 	"oxanium": "res://assets/fonts/Oxanium-VF.ttf",
+	"supreme": "res://assets/fonts/Supreme-Bold.otf",    # 사용자가 넣는 파일(Fontshare). 없으면 Exo 2 로 나온다
 }
 
 const GLASS_SHADER := preload("res://ui/shaders/glass.gdshader")
@@ -75,7 +76,7 @@ static func face(name: String, weight: int = 600, spacing: int = 0) -> Font:
 		return _cache[key]
 	var base: Font = load(FACES[name]) if ResourceLoader.exists(FACES[name]) else null
 	if base == null:
-		return font(true, weight, spacing)
+		return face("exo", weight, spacing) if name == "supreme" else font(true, weight, spacing)
 	var wght: int = TextServerManager.get_primary_interface().name_to_tag("wght")
 	var noto := FontVariation.new()
 	noto.base_font = _noto_file()

@@ -36,7 +36,7 @@ func _process(_delta: float) -> void:
 		var view: NoteView = _pool(n).acquire()
 		n.view = view
 		if n.type == NoteData.Type.FLICK:
-			view.set_flick_dir(n.dir)
+			view.set_flick(n.dir, n.width)
 		elif n.type == NoteData.Type.HOLD and n.head_hit:
 			view.set_state(NoteView.State.HELD)
 		_active.append(n)
